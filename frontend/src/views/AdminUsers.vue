@@ -1,64 +1,62 @@
 <template>
-  <Navbar />
-  <div style="max-width:640px;margin:20px auto;">
-    <h2>用户管理</h2>
-    <form @submit.prevent="create">
-      <input v-model="username" placeholder="新用户名" required />
-      <input v-model="password" type="password" placeholder="初始密码" required />
-      <button type="submit">创建普通用户</button>
-    </form>
+  <Shell>
+    <el-card>
+      <template #header><b>用户管理</b></template>
+      <el-form :inline="true" @submit.prevent>
+        <el-form-item>
+          <el-input v-model="username" placeholder="新用户名" />
+        </el-form-item>
+        <el-form-item>
+          <el-input v-model="password" type="password" placeholder="初始密码" />
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="create">创建普通用户</el-button>
+        </el-form-item>
+      </el-form>
 
-    <table border="1" cellspacing="0" cellpadding="6" style="margin-top:12px;width:100%;">
-      <thead><tr><th>ID</th><th>用户名</th><th>角色</th><th>操作</th></tr></thead>
-      <tbody>
-        <tr v-for="u in users" :key="u.id">
-          <td>{{u.id}}</td>
-          <td>{{u.username}}</td>
-          <td>{{u.role}}</td>
-          <td>
-            <button @click="remove(u.id)" :disabled="u.role==='admin'">删除</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+      <el-table :data="users" size="small" stripe class="mt-4">
+        <el-table-column prop="id" label="ID" width="80" />
+        <el-table-column prop="username" label="用户名" />
+        <el-table-column prop="role" label="角色" width="120" />
+        <el-table-column label="操作" width="120">
+          <template #default="{ row }">
+            <el-popconfirm title="确认删除该用户？（软删除）" @confirm="remove(row.id)">
+              <template #reference>
+                <el-button type="danger" link :disabled="row.role==='admin'">删除</el-button>
+              </template>
+            </el-popconfirm>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
+  </Shell>
 </template>
-
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import http from '../api/http'
-import Navbar from '../components/Navbar.vue'
+import Shell from '../components/Shell.vue'
+import { ElMessage } from 'element-plus'
 
 type User = { id:number; username:string; role:string }
 const users = ref<User[]>([])
 const username = ref('')
 const password = ref('')
 
-const load = async () => {
-  const { data } = await http.get('/admin/users')
-  users.value = data
-}
+const load = async () => { const { data } = await http.get('/admin/users'); users.value = data }
 
 const create = async () => {
-  try {
-    await http.post('/admin/users', { username: username.value, password: password.value })
-    username.value = ''
-    password.value = ''
-    await load()
-  } catch (err: any) {
-    alert(err.response?.data?.error || '创建失败')
-  }
+  try { await http.post('/admin/users', { username: username.value, password: password.value }); username.value=''; password.value=''; await load(); ElMessage.success('创建成功') }
+  catch (err:any) { ElMessage.error(err.response?.data?.error || '创建失败') }
 }
 
 const remove = async (id: number) => {
-  if (!confirm('确认删除该用户？此操作为软删除，可后续从数据库恢复。')) return
-  try {
-    await http.delete(`/admin/users/${id}`)
-    await load()
-  } catch (err: any) {
-    alert(err.response?.data?.error || '删除失败')
-  }
+  await http.delete(`/admin/users/${id}`)
+  ElMessage.success('已删除')
+  await load()
 }
 
 onMounted(load)
 </script>
+<style scoped>
+.mt-4 { margin-top: 1rem; }
+</style>

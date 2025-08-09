@@ -1,68 +1,81 @@
 <template>
-  <Navbar />
-  <div style="max-width:820px;margin:20px auto;">
-    <h2>录入工时</h2>
-    <form @submit.prevent="submit">
-      <label>项目</label>
-      <select v-model.number="projectId" required>
-        <option v-for="p in projects" :key="p.id" :value="p.id">{{p.name}}</option>
-      </select>
-      <label>日期</label>
-      <input type="date" v-model="date" required />
-      <label>小时数</label>
-      <input type="number" step="0.5" min="0" v-model.number="hours" required />
-      <label>内容</label>
-      <textarea v-model="content" rows="3" placeholder="本日工作内容"></textarea>
-      <button type="submit">提交</button>
-    </form>
+  <Shell>
+    <el-card>
+      <template #header><b>录入工时</b></template>
+      <el-form :model="form" label-width="80px" @submit.prevent>
+        <el-form-item label="项目">
+          <el-select v-model="form.projectId" placeholder="选择项目" style="width: 260px">
+            <el-option v-for="p in projects" :key="p.id" :label="p.name" :value="p.id" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="日期">
+          <el-date-picker v-model="form.date" type="date" placeholder="选择日期" style="width: 260px" />
+        </el-form-item>
+        <el-form-item label="小时数">
+          <el-input-number v-model="form.hours" :min="0" :step="0.5" />
+        </el-form-item>
+        <el-form-item label="内容">
+          <el-input type="textarea" v-model="form.content" :rows="3" placeholder="本日工作内容" />
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="submit">提交</el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
 
-    <h3 style="margin-top:24px;">我的工时记录</h3>
-    <table border="1" cellspacing="0" cellpadding="6" style="margin-top:8px;width:100%;">
-      <thead><tr><th>日期</th><th>项目</th><th>小时</th><th>内容</th><th>操作</th></tr></thead>
-      <tbody>
-        <tr v-for="t in list" :key="t.id">
-          <td>{{t.date?.slice(0,10)}}</td>
-          <td>{{t.project?.name}}</td>
-          <td>{{t.hours}}</td>
-          <td style="white-space:pre-wrap;">{{t.content}}</td>
-          <td><button @click="del(t.id)">删除</button></td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+    <el-card class="mt-4">
+      <template #header><b>我的工时记录</b></template>
+      <el-table :data="list" size="small" stripe>
+        <el-table-column prop="date" label="日期" width="140">
+          <template #default="{ row }">{{ row.date?.slice(0,10) }}</template>
+        </el-table-column>
+        <el-table-column prop="project.name" label="项目" />
+        <el-table-column prop="hours" label="小时" width="100" />
+        <el-table-column prop="content" label="内容" />
+        <el-table-column label="操作" width="100">
+          <template #default="{ row }">
+            <el-popconfirm title="确认删除这条记录？" @confirm="del(row.id)">
+              <template #reference>
+                <el-button type="danger" link>删除</el-button>
+              </template>
+            </el-popconfirm>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
+  </Shell>
 </template>
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import http from '../api/http'
-import Navbar from '../components/Navbar.vue'
+import Shell from '../components/Shell.vue'
+import { ElMessage } from 'element-plus'
 
 type Project = { id:number; name:string }
 const projects = ref<Project[]>([])
-const projectId = ref<number>()
-const date = ref<string>('')
-const hours = ref<number>(8)
-const content = ref<string>('')
-
 const list = ref<any[]>([])
+const form = ref({ projectId: undefined as number|undefined, date: '', hours: 8, content: '' })
 
 const load = async () => {
   const { data: ps } = await http.get('/projects')
   projects.value = ps
-  if (ps.length && !projectId.value) projectId.value = ps[0].id
+  if (ps.length && !form.value.projectId) form.value.projectId = ps[0].id
   const { data: mine } = await http.get('/timesheets/mine')
   list.value = mine
 }
 
 const submit = async () => {
-  await http.post('/timesheets', { project_id: projectId.value, date: date.value, hours: hours.value, content: content.value })
-  content.value = ''
+  if (!form.value.projectId || !form.value.date) return ElMessage.warning('请选择项目与日期')
+  await http.post('/timesheets', { project_id: form.value.projectId, date: form.value.date, hours: form.value.hours, content: form.value.content })
+  form.value.content = ''
+  ElMessage.success('提交成功')
   await load()
 }
 
-const del = async (id: number) => {
-  await http.delete(`/timesheets/${id}`)
-  await load()
-}
+const del = async (id: number) => { await http.delete(`/timesheets/${id}`); ElMessage.success('已删除'); await load() }
 
 onMounted(load)
 </script>
+<style scoped>
+.mt-4 { margin-top: 1rem; }
+</style>

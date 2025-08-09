@@ -1,68 +1,65 @@
 <template>
-  <Navbar />
-  <div style="max-width:820px;margin:20px auto;">
-    <h2>项目管理</h2>
-    <form @submit.prevent="create">
-      <input v-model="name" placeholder="项目名称" required />
-      <input v-model="desc" placeholder="项目描述" />
-      <button type="submit">创建</button>
-    </form>
-
-    <table border="1" cellspacing="0" cellpadding="6" style="margin-top:12px;width:100%;">
-      <thead><tr><th>ID</th><th>名称</th><th>描述</th><th>启用</th><th>操作</th></tr></thead>
-      <tbody>
-        <tr v-for="p in projects" :key="p.id">
-          <td>{{p.id}}</td>
-          <td><input v-model="p.name" /></td>
-          <td><input v-model="p.desc" /></td>
-          <td><input type="checkbox" v-model="p.is_active" /></td>
-          <td>
-            <button @click="save(p)">保存</button>
-            <button @click="del(p.id)">删除</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+  <Shell>
+    <el-card>
+      <template #header><b>项目管理</b></template>
+      <div class="flex gap-3 mb-3">
+        <el-input v-model="name" placeholder="项目名称" style="max-width: 260px" />
+        <el-input v-model="desc" placeholder="项目描述" style="max-width: 360px" />
+        <el-button type="primary" @click="create">创建</el-button>
+      </div>
+      <el-table :data="projects" size="small" stripe>
+        <el-table-column prop="id" label="ID" width="80" />
+        <el-table-column label="名称">
+          <template #default="{ row }"><el-input v-model="row.name" /></template>
+        </el-table-column>
+        <el-table-column label="描述">
+          <template #default="{ row }"><el-input v-model="row.desc" /></template>
+        </el-table-column>
+        <el-table-column prop="is_active" label="启用" width="100">
+          <template #default="{ row }"><el-switch v-model="row.is_active" /></template>
+        </el-table-column>
+        <el-table-column label="操作" width="160">
+          <template #default="{ row }">
+            <el-button type="primary" link @click="save(row)">保存</el-button>
+            <el-popconfirm title="确认删除该项目？" @confirm="del(row.id)">
+              <template #reference>
+                <el-button type="danger" link>删除</el-button>
+              </template>
+            </el-popconfirm>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
+  </Shell>
 </template>
+
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import http from '../api/http'
-import Navbar from '../components/Navbar.vue'
+import Shell from '../components/Shell.vue'
+import { ElMessage } from 'element-plus'
 
 type Project = { id:number; name:string; desc:string; is_active:boolean }
 const projects = ref<Project[]>([])
 const name = ref('')
 const desc = ref('')
 
-const load = async () => {
-  const { data } = await http.get('/projects')
-  projects.value = data
-}
+const load = async () => { const { data } = await http.get('/projects'); projects.value = data }
 
 const create = async () => {
-  try {
-    await http.post('/admin/projects', { name: name.value, desc: desc.value })
-    name.value = ''
-    desc.value = ''
-    await load()
-  } catch (err: any) {
-    if (err.response?.data?.error) {
-      alert(err.response.data.error)
-    } else {
-      alert('创建项目未知错误')
-    }
-  }
+  try { await http.post('/admin/projects', { name: name.value, desc: desc.value }); name.value=''; desc.value=''; await load(); ElMessage.success('创建成功') }
+  catch (err:any) { ElMessage.error(err.response?.data?.error || '创建项目失败') }
 }
 
-const save = async (p: Project) => {
-  await http.put(`/admin/projects/${p.id}`, { name: p.name, desc: p.desc, is_active: p.is_active })
-}
+const save = async (p: Project) => { await http.put(`/admin/projects/${p.id}`, { name: p.name, desc: p.desc, is_active: p.is_active }); ElMessage.success('已保存') }
 
-const del = async (id: number) => {
-  await http.delete(`/admin/projects/${id}`)
-  await load()
-}
+const del = async (id: number) => { await http.delete(`/admin/projects/${id}`); ElMessage.success('已删除'); await load() }
 
 onMounted(load)
 </script>
+
+<style scoped>
+.flex { display:flex; }
+.gap-3 { gap: .75rem; }
+.mb-3 { margin-bottom: .75rem; }
+</style>
