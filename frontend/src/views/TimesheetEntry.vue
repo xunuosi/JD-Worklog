@@ -9,7 +9,8 @@
           </el-select>
         </el-form-item>
         <el-form-item label="日期">
-          <el-date-picker v-model="form.date" type="date" placeholder="选择日期" style="width: 260px" />
+          <el-date-picker v-model="form.date" type="date" placeholder="选择日期" value-format="YYYY-MM-DD"
+            style="width: 260px" />
         </el-form-item>
         <el-form-item label="小时数">
           <el-input-number v-model="form.hours" :min="0" :step="0.5" />
@@ -27,7 +28,7 @@
       <template #header><b>我的工时记录</b></template>
       <el-table :data="list" size="small" stripe>
         <el-table-column prop="date" label="日期" width="140">
-          <template #default="{ row }">{{ row.date?.slice(0,10) }}</template>
+          <template #default="{ row }">{{ row.date?.slice(0, 10) }}</template>
         </el-table-column>
         <el-table-column prop="project.name" label="项目" />
         <el-table-column prop="hours" label="小时" width="100" />
@@ -51,10 +52,10 @@ import http from '../api/http'
 import Shell from '../components/Shell.vue'
 import { ElMessage } from 'element-plus'
 
-type Project = { id:number; name:string }
+type Project = { id: number; name: string }
 const projects = ref<Project[]>([])
 const list = ref<any[]>([])
-const form = ref({ projectId: undefined as number|undefined, date: '', hours: 8, content: '' })
+const form = ref({ projectId: undefined as number | undefined, date: '', hours: 8, content: '' })
 
 const load = async () => {
   const { data: ps } = await http.get('/projects')
@@ -77,5 +78,7 @@ const del = async (id: number) => { await http.delete(`/timesheets/${id}`); ElMe
 onMounted(load)
 </script>
 <style scoped>
-.mt-4 { margin-top: 1rem; }
+.mt-4 {
+  margin-top: 1rem;
+}
 </style>

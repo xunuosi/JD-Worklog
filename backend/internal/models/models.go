@@ -16,6 +16,7 @@ const (
 type User struct {
 	ID        uint   `gorm:"primaryKey" json:"id"`
 	Username  string `gorm:"uniqueIndex;size:64" json:"username"`
+	Nickname  string `json:"nickname"`
 	Password  string `json:"-"`
 	Role      Role   `gorm:"size:16" json:"role"`
 	CreatedAt time.Time

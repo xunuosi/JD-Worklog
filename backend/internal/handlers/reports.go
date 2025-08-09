@@ -21,8 +21,9 @@ type ProjectHours struct {
 }
 
 type reportReq struct {
-	From string `json:"from"`
-	To   string `json:"to"`
+	From   string `json:"from"`
+	To     string `json:"to"`
+	UserID *uint  `json:"user_id"` // ← 可为空；为空或 0 表示全体
 } // YYYY-MM-DD
 
 func (h *ReportHandler) ProjectTotals(c *gin.Context) {
@@ -31,52 +32,71 @@ func (h *ReportHandler) ProjectTotals(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "bad json"})
 		return
 	}
-	from, err1 := time.Parse("2006-01-02", req.From)
-	to, err2 := time.Parse("2006-01-02", req.To)
+	from, err1 := time.ParseInLocation("2006-01-02", req.From, time.Local)
+	to, err2 := time.ParseInLocation("2006-01-02", req.To, time.Local)
 	if err1 != nil || err2 != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "bad date"})
 		return
 	}
+
 	var rows []ProjectHours
-	h.DB.Raw(`
-		SELECT p.id as project_id, p.name as project_name, SUM(t.hours) as total_hours
-		FROM timesheets t JOIN projects p ON t.project_id = p.id
-		WHERE t.date BETWEEN ? AND ?
-		GROUP BY p.id, p.name
-		ORDER BY total_hours DESC
-	`, from, to).Scan(&rows)
+	if req.UserID != nil && *req.UserID != 0 {
+		h.DB.Raw(`
+            SELECT p.id as project_id, p.name as project_name, SUM(t.hours) as total_hours
+            FROM timesheets t JOIN projects p ON t.project_id = p.id
+            WHERE DATE(t.date) BETWEEN ? AND ? AND t.user_id = ?
+            GROUP BY p.id, p.name
+            ORDER BY total_hours DESC
+        `, from, to, *req.UserID).Scan(&rows)
+	} else {
+		h.DB.Raw(`
+            SELECT p.id as project_id, p.name as project_name, SUM(t.hours) as total_hours
+            FROM timesheets t JOIN projects p ON t.project_id = p.id
+            WHERE DATE(t.date) BETWEEN ? AND ?
+            GROUP BY p.id, p.name
+            ORDER BY total_hours DESC
+        `, from, to).Scan(&rows)
+	}
 	c.JSON(http.StatusOK, rows)
 }
 
-// CSV 导出: GET /api/admin/reports/project-totals.csv?from=YYYY-MM-DD&to=YYYY-MM-DD
+// CSV 导出同样支持 user_id
 func (h *ReportHandler) ProjectTotalsCSV(c *gin.Context) {
 	fromStr := c.Query("from")
 	toStr := c.Query("to")
-	from, err1 := time.Parse("2006-01-02", fromStr)
-	to, err2 := time.Parse("2006-01-02", toStr)
+	uidStr := c.Query("user_id")
+	from, err1 := time.ParseInLocation("2006-01-02", fromStr, time.Local)
+	to, err2 := time.ParseInLocation("2006-01-02", toStr, time.Local)
 	if err1 != nil || err2 != nil {
 		c.String(http.StatusBadRequest, "bad date")
 		return
 	}
+
 	var rows []ProjectHours
-	h.DB.Raw(`
-		SELECT p.id as project_id, p.name as project_name, SUM(t.hours) as total_hours
-		FROM timesheets t JOIN projects p ON t.project_id = p.id
-		WHERE t.date BETWEEN ? AND ?
-		GROUP BY p.id, p.name
-		ORDER BY total_hours DESC
-	`, from, to).Scan(&rows)
+	if uidStr != "" && uidStr != "0" {
+		h.DB.Raw(`
+            SELECT p.id as project_id, p.name as project_name, SUM(t.hours) as total_hours
+            FROM timesheets t JOIN projects p ON t.project_id = p.id
+            WHERE DATE(t.date) BETWEEN ? AND ? AND t.user_id = ?
+            GROUP BY p.id, p.name
+            ORDER BY total_hours DESC
+        `, from, to, uidStr).Scan(&rows)
+	} else {
+		h.DB.Raw(`
+            SELECT p.id as project_id, p.name as project_name, SUM(t.hours) as total_hours
+            FROM timesheets t JOIN projects p ON t.project_id = p.id
+            WHERE DATE(t.date) BETWEEN ? AND ?
+            GROUP BY p.id, p.name
+            ORDER BY total_hours DESC
+        `, from, to).Scan(&rows)
+	}
 
 	c.Header("Content-Type", "text/csv; charset=utf-8")
 	c.Header("Content-Disposition", "attachment; filename=project_totals.csv")
-	writer := csv.NewWriter(c.Writer)
-	defer writer.Flush()
-	writer.Write([]string{"project_id", "project_name", "total_hours"})
+	w := csv.NewWriter(c.Writer)
+	defer w.Flush()
+	_ = w.Write([]string{"project_id", "project_name", "total_hours"})
 	for _, r := range rows {
-		writer.Write([]string{
-			strconv.FormatUint(uint64(r.ProjectID), 10),
-			r.ProjectName,
-			strconv.FormatFloat(r.TotalHours, 'f', 2, 64),
-		})
+		_ = w.Write([]string{strconv.FormatUint(uint64(r.ProjectID), 10), r.ProjectName, strconv.FormatFloat(r.TotalHours, 'f', 2, 64)})
 	}
 }

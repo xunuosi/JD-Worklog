@@ -14,12 +14,14 @@ type UsersHandler struct{ DB *gorm.DB }
 type createUserReq struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
+	Nickname string `json:"nickname"`
 }
 
 type userResp struct {
 	ID       uint   `json:"id"`
 	Username string `json:"username"`
 	Role     string `json:"role"`
+	Nickname string `json:"nickname"`
 }
 
 // POST /api/admin/users  -> 创建普通用户（禁止创建 admin），用户名判重
@@ -40,7 +42,7 @@ func (h *UsersHandler) Create(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "用户名已存在"})
 		return
 	}
-	u := models.User{Username: req.Username, Password: hash(req.Password), Role: models.RoleUser}
+	u := models.User{Username: req.Username, Password: hash(req.Password), Role: models.RoleUser, Nickname: req.Username}
 	if err := h.DB.Create(&u).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -57,7 +59,7 @@ func (h *UsersHandler) List(c *gin.Context) {
 	}
 	resp := make([]userResp, 0, len(users))
 	for _, u := range users {
-		resp = append(resp, userResp{ID: u.ID, Username: u.Username, Role: string(u.Role)})
+		resp = append(resp, userResp{ID: u.ID, Username: u.Username, Role: string(u.Role), Nickname: u.Nickname})
 	}
 	c.JSON(http.StatusOK, resp)
 }
