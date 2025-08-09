@@ -1,6 +1,10 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
 
 type Role string
 
@@ -15,6 +19,7 @@ type User struct {
 	Password  string `json:"-"`
 	Role      Role   `gorm:"size:16" json:"role"`
 	CreatedAt time.Time
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
 type Project struct {

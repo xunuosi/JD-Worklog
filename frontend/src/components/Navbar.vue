@@ -4,6 +4,7 @@
     <span style="flex:1"></span>
     <router-link v-if="role==='admin'" to="/admin/projects">项目管理</router-link>
     <router-link v-if="role==='admin'" to="/admin/report">工时报表</router-link>
+    <router-link v-if="role==='admin'" to="/admin/users">用户管理</router-link>
     <router-link to="/timesheet">录入工时</router-link>
     <button @click="logout">退出</button>
   </nav>

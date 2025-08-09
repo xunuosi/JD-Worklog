@@ -20,9 +20,9 @@ func main() {
 
 	r := gin.Default()
 	r.Use(cors.New(cors.Config{
-		AllowOrigins: cfg.CORSOrigins,
-		AllowMethods: []string{"GET","POST","PUT","DELETE","OPTIONS"},
-		AllowHeaders: []string{"Authorization","Content-Type"},
+		AllowOrigins:     cfg.CORSOrigins,
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Authorization", "Content-Type"},
 		AllowCredentials: true,
 	}))
 
@@ -49,7 +49,10 @@ func main() {
 				admin.POST("/reports/project-totals", repH.ProjectTotals)
 				admin.GET("/reports/project-totals.csv", repH.ProjectTotalsCSV) // CSV 导出
 			}
-
+			usersH := &handlers.UsersHandler{DB: dbConn}
+			admin.POST("/users", usersH.Create)
+			admin.GET("/users", usersH.List)
+			admin.DELETE("/users/:id", usersH.Delete)
 			auth.GET("/projects", projH.List)
 			auth.GET("/timesheets/mine", tsH.ListMine)
 			auth.POST("/timesheets", tsH.Create)
@@ -58,5 +61,7 @@ func main() {
 	}
 
 	log.Println("server starting on :8080")
-	if err := r.Run(":8080"); err != nil { panic(err) }
+	if err := r.Run(":8080"); err != nil {
+		panic(err)
+	}
 }
