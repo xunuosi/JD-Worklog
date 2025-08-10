@@ -11,7 +11,7 @@
           <el-button type="primary" class="w-full" @click="submit">登录</el-button>
         </el-form-item>
       </el-form>
-      <div class="mt-2 text-muted">示例：admin/admin123 或 alice/alice123</div>
+      <!-- <div class="mt-2 text-muted">示例：admin/admin123 或 alice/alice123</div> -->
     </el-card>
   </div>
 </template>
