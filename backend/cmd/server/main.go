@@ -44,7 +44,7 @@ func main() {
 			admin := auth.Group("/admin")
 			admin.Use(middleware.RequireRole("admin"))
 			{
-				admin.GET("/projects", projH.List)
+				admin.GET("/allprojects", projH.AllList)
 				admin.POST("/projects", projH.Create)
 				admin.PUT("/projects/:id", projH.Update)
 				admin.DELETE("/projects/:id", projH.Delete)

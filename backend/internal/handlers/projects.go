@@ -17,6 +17,15 @@ type projectReq struct {
 
 func (h *ProjectHandler) List(c *gin.Context) {
 	var ps []models.Project
+	if err := h.DB.Order("id desc").Where("is_active = ?", true).Find(&ps).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "db"})
+		return
+	}
+	c.JSON(http.StatusOK, ps)
+}
+
+func (h *ProjectHandler) AllList(c *gin.Context) {
+	var ps []models.Project
 	if err := h.DB.Order("id desc").Find(&ps).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "db"})
 		return

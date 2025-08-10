@@ -44,7 +44,7 @@ const projects = ref<Project[]>([])
 const name = ref('')
 const desc = ref('')
 
-const load = async () => { const { data } = await http.get('/projects'); projects.value = data }
+const load = async () => { const { data } = await http.get('/admin/allprojects'); projects.value = data }
 
 const create = async () => {
   try { await http.post('/admin/projects', { name: name.value, desc: desc.value }); name.value=''; desc.value=''; await load(); ElMessage.success('创建成功') }
