@@ -32,6 +32,7 @@ func main() {
 	projH := &handlers.ProjectHandler{DB: dbConn}
 	tsH := &handlers.TimesheetHandler{DB: dbConn}
 	repH := &handlers.ReportHandler{DB: dbConn}
+	acctH := &handlers.AccountHandler{DB: dbConn}
 
 	api := r.Group("/api")
 	{
@@ -49,15 +50,19 @@ func main() {
 				admin.DELETE("/projects/:id", projH.Delete)
 				admin.POST("/reports/project-totals", repH.ProjectTotals)
 				admin.GET("/reports/project-totals.csv", repH.ProjectTotalsCSV) // CSV 导出
+				usersH := &handlers.UsersHandler{DB: dbConn}
+				admin.POST("/users", usersH.Create)
+				admin.GET("/users", usersH.List)
+				// admin.DELETE("/users/:id", usersH.Delete)
+				// 管理员重置用户密码
+				admin.POST("/users/reset-password", usersH.ResetPassword)
 			}
-			usersH := &handlers.UsersHandler{DB: dbConn}
-			admin.POST("/users", usersH.Create)
-			admin.GET("/users", usersH.List)
-			admin.DELETE("/users/:id", usersH.Delete)
 			auth.GET("/projects", projH.List)
 			auth.GET("/timesheets/mine", tsH.ListMine)
 			auth.POST("/timesheets", tsH.Create)
 			auth.DELETE("/timesheets/:id", tsH.Delete)
+			// 用户自助改密
+			auth.POST("/change-password", acctH.ChangePassword)
 		}
 	}
 

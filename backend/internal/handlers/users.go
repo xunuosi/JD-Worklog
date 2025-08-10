@@ -2,8 +2,10 @@ package handlers
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 
 	"github.com/example/worklog-system/internal/models"
@@ -42,7 +44,8 @@ func (h *UsersHandler) Create(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "用户名已存在"})
 		return
 	}
-	u := models.User{Username: req.Username, Password: hash(req.Password), Role: models.RoleUser, Nickname: req.Username}
+	hash, _ := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	u := models.User{Username: req.Username, Password: string(hash), Role: models.RoleUser, Nickname: req.Username}
 	if err := h.DB.Create(&u).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -90,4 +93,41 @@ func (h *UsersHandler) Delete(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"ok": true})
+}
+
+// 重置密码 API（管理员操作）— 默认为 root
+func (h *UsersHandler) ResetPassword(c *gin.Context) {
+	var req struct {
+		UserID      uint   `json:"user_id"`
+		NewPassword string `json:"new_password"` // 可为空
+	}
+	if err := c.ShouldBindJSON(&req); err != nil || req.UserID == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		return
+	}
+
+	// 默认密码
+	if strings.TrimSpace(req.NewPassword) == "" {
+		req.NewPassword = "root"
+	}
+
+	var user models.User
+	if err := h.DB.First(&user, req.UserID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		return
+	}
+
+	// 可选保护：不允许重置管理员
+	// if user.Role == models.RoleAdmin {
+	//     c.JSON(http.StatusBadRequest, gin.H{"error": "cannot reset admin password"})
+	//     return
+	// }
+
+	hash, _ := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	if err := h.DB.Model(&user).Update("password", string(hash)).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "update failed"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "password reset successfully", "default": req.NewPassword})
 }

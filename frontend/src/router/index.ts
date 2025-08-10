@@ -5,6 +5,7 @@ import AdminReport from '../views/AdminReport.vue'
 import TimesheetEntry from '../views/TimesheetEntry.vue'
 import { useAuthStore } from '../store/auth'
 import AdminUsers from '../views/AdminUsers.vue'
+import AccountSecurity from '../views/AccountSecurity.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -15,6 +16,7 @@ const router = createRouter({
     { path: '/admin/report', component: AdminReport },
     { path: '/timesheet', component: TimesheetEntry },
     { path: '/admin/users', component: AdminUsers },
+    { path: '/account/security', component: AccountSecurity },
   ]
 })
 

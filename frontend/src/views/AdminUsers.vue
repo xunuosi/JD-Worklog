@@ -14,11 +14,12 @@
         <el-table-column prop="username" label="用户名" />
         <el-table-column prop="nickname" label="昵称" />
         <el-table-column prop="role" label="角色" width="120" />
-        <el-table-column label="操作" width="120">
+        <el-table-column label="操作" width="220">
           <template #default="{ row }">
-            <el-popconfirm title="确认删除该用户？（软删除）" @confirm="remove(row.id)">
+            <!-- 其他按钮... -->
+            <el-popconfirm title="确认将该用户密码重置为 root？" @confirm="resetPwd(row)">
               <template #reference>
-                <el-button type="danger" link :disabled="row.role==='admin'">删除</el-button>
+                <el-button type="primary" link :disabled="row.role === 'admin'">重置为 root</el-button>
               </template>
             </el-popconfirm>
           </template>
@@ -33,7 +34,12 @@ import http from '../api/http'
 import Shell from '../components/Shell.vue'
 import { ElMessage } from 'element-plus'
 
-type User = { id:number; username:string; role:string; nickname?:string }
+const resetPwd = async (u: { id: number; username: string }) => {
+  await http.post('/admin/users/reset-password', { user_id: u.id }) // 不传 new_password，后端默认 root
+  ElMessage.success('已重置为 root')
+}
+
+type User = { id: number; username: string; role: string; nickname?: string }
 const users = ref<User[]>([])
 const username = ref('')
 const password = ref('')
@@ -44,9 +50,9 @@ const load = async () => { const { data } = await http.get('/admin/users'); user
 const create = async () => {
   try {
     await http.post('/admin/users', { username: username.value, password: password.value, nickname: nickname.value })
-    username.value=''; password.value=''; nickname.value='';
+    username.value = ''; password.value = ''; nickname.value = '';
     await load(); ElMessage.success('创建成功')
-  } catch (err:any) { ElMessage.error(err.response?.data?.error || '创建失败') }
+  } catch (err: any) { ElMessage.error(err.response?.data?.error || '创建失败') }
 }
 
 const remove = async (id: number) => { await http.delete(`/admin/users/${id}`); ElMessage.success('已删除'); await load() }
@@ -54,5 +60,7 @@ const remove = async (id: number) => { await http.delete(`/admin/users/${id}`); 
 onMounted(load)
 </script>
 <style scoped>
-.mt-4 { margin-top: 1rem; }
+.mt-4 {
+  margin-top: 1rem;
+}
 </style>

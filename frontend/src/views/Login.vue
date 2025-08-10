@@ -22,8 +22,19 @@ import { ElMessage } from 'element-plus'
 const auth = useAuthStore()
 const form = reactive({ username: 'admin', password: 'admin123' })
 const submit = async () => {
-  try { await auth.login(form.username, form.password) } 
-  catch { ElMessage.error('登录失败') }
+  try {
+    await auth.login(form.username, form.password)
+  } catch (err: any) {
+    // 默认错误信息
+    let msg = '请求失败'
+    // 先判断 err.response 存在
+    if (err?.response?.data?.error) {
+      msg = err.response.data.error
+    } else if (err?.message) {
+      msg = err.message
+    }
+    ElMessage.error(msg)
+  }
 }
 </script>
 <style scoped>
