@@ -49,7 +49,8 @@ func main() {
 				admin.PUT("/projects/:id", projH.Update)
 				admin.DELETE("/projects/:id", projH.Delete)
 				admin.POST("/reports/project-totals", repH.ProjectTotals)
-				admin.GET("/reports/project-totals.csv", repH.ProjectTotalsCSV) // CSV 导出
+				// CSV 导出
+				admin.GET("/reports/project-totals.csv", repH.ProjectTotalsCSV)
 				usersH := &handlers.UsersHandler{DB: dbConn}
 				admin.POST("/users", usersH.Create)
 				admin.GET("/users", usersH.List)
@@ -61,6 +62,9 @@ func main() {
 			auth.GET("/timesheets/mine", tsH.ListMine)
 			auth.POST("/timesheets", tsH.Create)
 			auth.DELETE("/timesheets/:id", tsH.Delete)
+			// 新增：更新本人工时
+			auth.PUT("/timesheets/:id", tsH.Update)
+
 			// 用户自助改密
 			auth.POST("/change-password", acctH.ChangePassword)
 		}

@@ -4,7 +4,7 @@
       <template #header>
         <div class="card-header">登录</div>
       </template>
-      <el-form :model="form" @submit.prevent>
+      <el-form :model="form" @submit.prevent label-width="80px" label-position="right">
         <el-form-item label="用户名"><el-input v-model="form.username" /></el-form-item>
         <el-form-item label="密码"><el-input v-model="form.password" type="password" /></el-form-item>
         <el-form-item>
@@ -38,10 +38,31 @@ const submit = async () => {
 }
 </script>
 <style scoped>
-.login-wrap { min-height: 100vh; display:flex; align-items:center; justify-content:center; background: linear-gradient(135deg,#f5f7fa,#e6ecf5); }
-.box-card { width: 360px; }
-.card-header { font-weight: 600; }
-.w-full { width: 100%; }
-.mt-2 { margin-top: .5rem; }
-.text-muted { color: #909399; }
+.login-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f5f7fa, #e6ecf5);
+}
+
+.box-card {
+  width: 360px;
+}
+
+.card-header {
+  font-weight: 600;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.mt-2 {
+  margin-top: .5rem;
+}
+
+.text-muted {
+  color: #909399;
+}
 </style>
