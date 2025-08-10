@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"strings"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -59,6 +60,18 @@ func main() {
 			auth.DELETE("/timesheets/:id", tsH.Delete)
 		}
 	}
+
+	// API 路由...
+	r.Static("/assets", "./frontend/dist/assets")
+	r.StaticFile("/favicon.ico", "./frontend/dist/favicon.ico")
+
+	r.NoRoute(func(c *gin.Context) {
+		if strings.HasPrefix(c.Request.URL.Path, "/api/") {
+			c.JSON(404, gin.H{"error": "not found"})
+			return
+		}
+		c.File("./frontend/dist/index.html")
+	})
 
 	log.Println("server starting on :8080")
 	if err := r.Run(":8080"); err != nil {

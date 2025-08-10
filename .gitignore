@@ -29,3 +29,6 @@ Thumbs.db
 # npm modules
 **/node_modules/
 node_modules/
+
+# CSV files
+*.csv
