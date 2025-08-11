@@ -82,8 +82,8 @@ func main() {
 		c.File("./frontend/dist/index.html")
 	})
 
-	log.Println("server starting on :8080")
-	if err := r.Run(":8080"); err != nil {
+	log.Println("server starting on :10080")
+	if err := r.Run(":10080"); err != nil {
 		panic(err)
 	}
 }
