@@ -21,7 +21,7 @@ func Load() *Config {
 		DBHost:      getEnv("DB_HOST", "127.0.0.1"),
 		DBPort:      getEnv("DB_PORT", "3306"),
 		DBUser:      getEnv("DB_USER", "worklog"),
-		DBPass:      getEnv("DB_PASS", "worklog@123"),
+		DBPass:      getEnv("DB_PASS", "Worklog@123"),
 		DBName:      getEnv("DB_NAME", "worklog"),
 		JWTSecret:   getEnv("JWT_SECRET", "devsecretchangeit"),
 		CORSOrigins: splitCsv(getEnv("CORS_ORIGINS", "http://localhost:5173")),

@@ -35,3 +35,4 @@ node_modules/
 
 # debug bin
 __debug_bin*
+*.exe
