@@ -4,6 +4,7 @@ import vue from '@vitejs/plugin-vue' // 如果是 React 替换为 react()
 
 export default defineConfig({
   plugins: [vue()],
+  base: '/worklog/',
   server: {
     host: '0.0.0.0',
     port: 5173,

@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { useAuthStore } from '../store/auth'
 
-const http = axios.create({ baseURL: '/api' })
+const http = axios.create({ baseURL: '/worklog/api' })
 
 http.interceptors.request.use(config => {
   const auth = useAuthStore()

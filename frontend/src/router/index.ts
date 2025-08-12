@@ -8,7 +8,7 @@ import AdminUsers from '../views/AdminUsers.vue'
 import AccountSecurity from '../views/AccountSecurity.vue'
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory('/worklog/'),
   routes: [
     { path: '/', redirect: '/login' },
     { path: '/login', component: Login },
