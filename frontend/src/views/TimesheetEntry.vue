@@ -6,7 +6,7 @@
       <!-- 新增工时 -->
       <el-form :model="form" label-width="80px" @submit.prevent>
         <el-form-item label="项目">
-          <el-select v-model="form.projectId" placeholder="选择项目" style="width: 260px">
+          <el-select v-model="form.projectId" filterable clearable placeholder="搜索/选择项目" style="width: 260px">
             <el-option v-for="p in projects" :key="p.id" :label="p.name" :value="p.id" />
           </el-select>
         </el-form-item>
