@@ -131,3 +131,24 @@ func (h *UsersHandler) ResetPassword(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "password reset successfully", "default": req.NewPassword})
 }
+
+// PUT /api/admin/users/:id/nickname
+func (h *UsersHandler) UpdateNickname(c *gin.Context) {
+    id := c.Param("id")
+
+    var req struct{ Nickname string `json:"nickname"` }
+    if err := c.ShouldBindJSON(&req); err != nil || strings.TrimSpace(req.Nickname) == "" {
+        c.JSON(400, gin.H{"error":"invalid nickname"}); return
+    }
+
+    // 可选：禁止改管理员昵称
+    // var u models.User
+    // if err := h.DB.First(&u, id).Error; err != nil { c.JSON(404, gin.H{"error":"user not found"}); return }
+    // if u.Role == models.RoleAdmin { c.JSON(400, gin.H{"error":"cannot edit admin"}); return }
+
+    if err := h.DB.Model(&models.User{}).Where("id = ?", id).
+        Update("nickname", req.Nickname).Error; err != nil {
+        c.JSON(500, gin.H{"error":"update failed"}); return
+    }
+    c.JSON(200, gin.H{"ok": true})
+}

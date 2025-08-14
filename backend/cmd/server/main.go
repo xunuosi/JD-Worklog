@@ -54,6 +54,7 @@ func main() {
 				usersH := &handlers.UsersHandler{DB: dbConn}
 				admin.POST("/users", usersH.Create)
 				admin.GET("/users", usersH.List)
+				admin.PUT("/users/:id/nickname", usersH.UpdateNickname)
 				// admin.DELETE("/users/:id", usersH.Delete)
 				// 管理员重置用户密码
 				admin.POST("/users/reset-password", usersH.ResetPassword)

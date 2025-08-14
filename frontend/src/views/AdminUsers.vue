@@ -12,7 +12,12 @@
       <el-table :data="users" size="small" stripe class="mt-4">
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="username" label="用户名" />
-        <el-table-column prop="nickname" label="昵称" />
+        <el-table-column label="昵称" width="260">
+          <template #default="{ row }">
+            <el-input v-model="row.nickname" size="small" style="width:180px;margin-right:8px" />
+            <el-button size="small" type="primary" @click="saveNickname(row)">保存</el-button>
+          </template>
+        </el-table-column>
         <el-table-column prop="role" label="角色" width="120" />
         <el-table-column label="操作" width="220">
           <template #default="{ row }">
@@ -53,6 +58,13 @@ const create = async () => {
     username.value = ''; password.value = ''; nickname.value = '';
     await load(); ElMessage.success('创建成功')
   } catch (err: any) { ElMessage.error(err.response?.data?.error || '创建失败') }
+}
+
+const saveNickname = async (row: User) => {
+  const nickname = (row.nickname || '').trim()
+  if (!nickname) return ElMessage.warning('请输入昵称')
+  await http.put(`/admin/users/${row.id}/nickname`, { nickname })
+  ElMessage.success('已更新昵称')
 }
 
 const remove = async (id: number) => { await http.delete(`/admin/users/${id}`); ElMessage.success('已删除'); await load() }
