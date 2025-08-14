@@ -45,12 +45,12 @@ func (h *UsersHandler) Create(c *gin.Context) {
 		return
 	}
 	hash, _ := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-	u := models.User{Username: req.Username, Password: string(hash), Role: models.RoleUser, Nickname: req.Username}
+	u := models.User{Username: req.Username, Password: string(hash), Role: models.RoleUser, Nickname: req.Nickname}
 	if err := h.DB.Create(&u).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, userResp{ID: u.ID, Username: u.Username, Role: string(u.Role)})
+	c.JSON(http.StatusOK, userResp{ID: u.ID, Username: u.Username, Role: string(u.Role), Nickname: u.Nickname})
 }
 
 // GET /api/admin/users -> 简单列表（不返回密码）
