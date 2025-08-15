@@ -20,7 +20,7 @@ import { reactive } from 'vue'
 import { useAuthStore } from '../store/auth'
 import { ElMessage } from 'element-plus'
 const auth = useAuthStore()
-const form = reactive({ username: 'admin', password: 'admin123' })
+const form = reactive({ username: '', password: '' })
 const submit = async () => {
   try {
     await auth.login(form.username, form.password)
