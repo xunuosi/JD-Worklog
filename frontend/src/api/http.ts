@@ -1,7 +1,8 @@
 import axios from 'axios'
 import { useAuthStore } from '../store/auth'
 
-const http = axios.create({ baseURL: '/worklog/api' })
+const base = import.meta.env.VITE_API_BASE || '/api'
+const http = axios.create({ baseURL: base })
 
 http.interceptors.request.use(config => {
   const auth = useAuthStore()
