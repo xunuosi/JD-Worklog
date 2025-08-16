@@ -51,6 +51,7 @@ func main() {
 				admin.POST("/reports/project-totals", repH.ProjectTotals)
 				// CSV 导出
 				admin.GET("/reports/project-totals.csv", repH.ProjectTotalsCSV)
+				admin.GET("/reports/project-export-xlsx", repH.ProjectExportXLSX)
 				usersH := &handlers.UsersHandler{DB: dbConn}
 				admin.POST("/users", usersH.Create)
 				admin.GET("/users", usersH.List)
