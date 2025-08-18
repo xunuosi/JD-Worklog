@@ -17,7 +17,6 @@ cd "$MODROOT"
 APP_NAME="jd-worklog"
 MAIN_PKG="./cmd/server"
 CGO_ENABLED=0
-CC_386="i686-linux-gnu-gcc"
 CC_AMD64="x86_64-linux-gnu-gcc"
 EXTRA_BUILD_TAGS=""
 
@@ -63,9 +62,6 @@ build_one() {
   shasum -a 256 "$OUT" > "${OUT}.sha256.txt"
   echo "[OK] Build success: $OUT"
 }
-
-# ===== linux/386 =====
-build_one "linux_386" "linux" "386" "$CC_386"
 
 # ===== linux/amd64 =====
 build_one "linux_amd64" "linux" "amd64" "$CC_AMD64"
