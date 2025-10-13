@@ -131,45 +131,49 @@ func (h *ReportHandler) ProjectExportXLSX(c *gin.Context) {
 	_, _ = f.NewSheet(detailSheet)
 
 	// ===== 1) total sheet：项目总工时（不含 nickname）=====
-	_ = f.SetSheetRow(totalSheet, "A1", &[]string{"project_name", "total_hours"})
+	_ = f.SetSheetRow(totalSheet, "A1", &[]string{"project_name", "contract_num", "total_hours"})
 
 	type totalRow struct {
 		ProjectName string
+		ContractNum string
 		TotalHours  float64
 	}
 	totals := []totalRow{}
 	if uidStr != "" && uidStr != "0" {
 		h.DB.Raw(`
             SELECT p.name AS project_name,
+                   p.contract_num,
                    SUM(t.hours) AS total_hours
             FROM timesheets t
             JOIN projects p ON t.project_id = p.id
             WHERE DATE(t.date) BETWEEN ? AND ? AND t.user_id = ?
-            GROUP BY p.name
+            GROUP BY p.name, p.contract_num
             ORDER BY total_hours DESC
         `, from, to, uidStr).Scan(&totals)
 	} else {
 		h.DB.Raw(`
             SELECT p.name AS project_name,
+                   p.contract_num,
                    SUM(t.hours) AS total_hours
             FROM timesheets t
             JOIN projects p ON t.project_id = p.id
             WHERE DATE(t.date) BETWEEN ? AND ?
-            GROUP BY p.name
+            GROUP BY p.name, p.contract_num
             ORDER BY total_hours DESC
         `, from, to).Scan(&totals)
 	}
 	for i, r := range totals {
 		cell := fmt.Sprintf("A%d", i+2)
-		_ = f.SetSheetRow(totalSheet, cell, &[]any{r.ProjectName, r.TotalHours})
+		_ = f.SetSheetRow(totalSheet, cell, &[]any{r.ProjectName, r.ContractNum, r.TotalHours})
 	}
 
 	// ===== 2) detail sheet：明细（按你要求的列顺序）=====
 	// 列顺序：p.name, u.nickname, t.hours, t.content
-	_ = f.SetSheetRow(detailSheet, "A1", &[]string{"project_name", "nickname", "hours", "content"})
+	_ = f.SetSheetRow(detailSheet, "A1", &[]string{"project_name", "contract_num", "nickname", "hours", "content"})
 
 	type detailRow struct {
 		ProjectName string
+		ContractNum string
 		Nickname    string
 		Hours       float64
 		Content     string
@@ -178,6 +182,7 @@ func (h *ReportHandler) ProjectExportXLSX(c *gin.Context) {
 	if uidStr != "" && uidStr != "0" {
 		h.DB.Raw(`
             SELECT p.name AS project_name,
+                   p.contract_num,
                    COALESCE(u.nickname, u.username) AS nickname,
                    t.hours,
                    t.content
@@ -190,6 +195,7 @@ func (h *ReportHandler) ProjectExportXLSX(c *gin.Context) {
 	} else {
 		h.DB.Raw(`
             SELECT p.name AS project_name,
+                   p.contract_num,
                    COALESCE(u.nickname, u.username) AS nickname,
                    t.hours,
                    t.content
@@ -202,7 +208,7 @@ func (h *ReportHandler) ProjectExportXLSX(c *gin.Context) {
 	}
 	for i, r := range details {
 		cell := fmt.Sprintf("A%d", i+2)
-		_ = f.SetSheetRow(detailSheet, cell, &[]any{r.ProjectName, r.Nickname, r.Hours, r.Content})
+		_ = f.SetSheetRow(detailSheet, cell, &[]any{r.ProjectName, r.ContractNum, r.Nickname, r.Hours, r.Content})
 	}
 
 	// 响应下载
