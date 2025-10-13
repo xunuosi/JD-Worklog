@@ -10,9 +10,10 @@ import (
 
 type ProjectHandler struct{ DB *gorm.DB }
 type projectReq struct {
-	Name     string `json:"name"`
-	Desc     string `json:"desc"`
-	IsActive *bool  `json:"is_active"`
+	Name        string `json:"name"`
+	Desc        string `json:"desc"`
+	ContractNum string `json:"contract_num"`
+	IsActive    *bool  `json:"is_active"`
 }
 
 func (h *ProjectHandler) List(c *gin.Context) {
@@ -46,7 +47,7 @@ func (h *ProjectHandler) Create(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "项目名称已存在"})
 		return
 	}
-	p := models.Project{Name: req.Name, Desc: req.Desc}
+	p := models.Project{Name: req.Name, Desc: req.Desc, ContractNum: req.ContractNum}
 	if req.IsActive != nil {
 		p.IsActive = *req.IsActive
 	}
@@ -73,6 +74,7 @@ func (h *ProjectHandler) Update(c *gin.Context) {
 		p.Name = req.Name
 	}
 	p.Desc = req.Desc
+	p.ContractNum = req.ContractNum
 	if req.IsActive != nil {
 		p.IsActive = *req.IsActive
 	}

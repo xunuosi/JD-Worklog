@@ -24,11 +24,12 @@ type User struct {
 }
 
 type Project struct {
-	ID        uint   `gorm:"primaryKey" json:"id"`
-	Name      string `gorm:"size:128;uniqueIndex" json:"name"`
-	Desc      string `gorm:"type:text" json:"desc"`
-	IsActive  bool   `gorm:"default:true" json:"is_active"`
-	CreatedAt time.Time
+	ID          uint   `gorm:"primaryKey" json:"id"`
+	Name        string `gorm:"size:128;uniqueIndex" json:"name"`
+	Desc        string `gorm:"type:text" json:"desc"`
+	ContractNum string `gorm:"size:128" json:"contract_num"`
+	IsActive    bool   `gorm:"default:true" json:"is_active"`
+	CreatedAt   time.Time
 }
 
 type Timesheet struct {

@@ -5,6 +5,7 @@
       <div class="flex gap-3 mb-3">
         <el-input v-model="name" placeholder="项目名称" style="max-width: 260px" />
         <el-input v-model="desc" placeholder="项目描述" style="max-width: 360px" />
+        <el-input v-model="contractNum" placeholder="合同编号" style="max-width: 260px" />
         <el-button type="primary" @click="create">创建</el-button>
       </div>
       <el-table :data="projects" size="small" stripe>
@@ -14,6 +15,9 @@
         </el-table-column>
         <el-table-column label="描述">
           <template #default="{ row }"><el-input v-model="row.desc" /></template>
+        </el-table-column>
+        <el-table-column label="合同编号">
+          <template #default="{ row }"><el-input v-model="row.contract_num" /></template>
         </el-table-column>
         <el-table-column prop="is_active" label="启用" width="100">
           <template #default="{ row }"><el-switch v-model="row.is_active" /></template>
@@ -39,19 +43,20 @@ import http from '../api/http'
 import Shell from '../components/Shell.vue'
 import { ElMessage } from 'element-plus'
 
-type Project = { id:number; name:string; desc:string; is_active:boolean }
+type Project = { id:number; name:string; desc:string; contract_num:string; is_active:boolean }
 const projects = ref<Project[]>([])
 const name = ref('')
 const desc = ref('')
+const contractNum = ref('')
 
 const load = async () => { const { data } = await http.get('/admin/allprojects'); projects.value = data }
 
 const create = async () => {
-  try { await http.post('/admin/projects', { name: name.value, desc: desc.value }); name.value=''; desc.value=''; await load(); ElMessage.success('创建成功') }
+  try { await http.post('/admin/projects', { name: name.value, desc: desc.value, contract_num: contractNum.value }); name.value=''; desc.value=''; contractNum.value = ''; await load(); ElMessage.success('创建成功') }
   catch (err:any) { ElMessage.error(err.response?.data?.error || '创建项目失败') }
 }
 
-const save = async (p: Project) => { await http.put(`/admin/projects/${p.id}`, { name: p.name, desc: p.desc, is_active: p.is_active }); ElMessage.success('已保存') }
+const save = async (p: Project) => { await http.put(`/admin/projects/${p.id}`, { name: p.name, desc: p.desc, contract_num: p.contract_num, is_active: p.is_active }); ElMessage.success('已保存') }
 
 const del = async (id: number) => { await http.delete(`/admin/projects/${id}`); ElMessage.success('已删除'); await load() }
 
