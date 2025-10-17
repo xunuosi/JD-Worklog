@@ -29,10 +29,12 @@ func main() {
 
 	jwt := middleware.NewJWT(cfg.JWTSecret)
 	authH := &handlers.AuthHandler{DB: dbConn, JWT: jwt}
+	tfaH := &handlers.TwoFactorAuthHandler{DB: dbConn, JWT: jwt}
 	projH := &handlers.ProjectHandler{DB: dbConn}
 	tsH := &handlers.TimesheetHandler{DB: dbConn}
 	repH := &handlers.ReportHandler{DB: dbConn}
 	acctH := &handlers.AccountHandler{DB: dbConn}
+	usersH := &handlers.UsersHandler{DB: dbConn}
 
 	api := r.Group("/api")
 	{
@@ -41,39 +43,47 @@ func main() {
 		auth := api.Group("")
 		auth.Use(jwt.AuthRequired())
 		{
-			admin := auth.Group("/admin")
-			admin.Use(middleware.RequireRole("admin"))
+			auth.POST("/login/2fa", authH.Login2FA)
+			auth.POST("/2fa/setup", tfaH.Setup)
+			auth.POST("/2fa/verify", tfaH.Verify)
+
+			tfa := auth.Group("")
+			tfa.Use(jwt.TFARequired())
 			{
-				admin.GET("/allprojects", projH.AllList)
-				admin.POST("/projects", projH.Create)
-				admin.PUT("/projects/:id", projH.Update)
-				admin.DELETE("/projects/:id", projH.Delete)
-				admin.POST("/reports/project-totals", repH.ProjectTotals)
-				// CSV 导出
-				admin.GET("/reports/project-totals.csv", repH.ProjectTotalsCSV)
-				admin.GET("/reports/project-export-xlsx", repH.ProjectExportXLSX)
-				usersH := &handlers.UsersHandler{DB: dbConn}
-				admin.POST("/users", usersH.Create)
-				admin.GET("/users", usersH.List)
-				admin.PUT("/users/:id/nickname", usersH.UpdateNickname)
-				// admin.DELETE("/users/:id", usersH.Delete)
-				// 管理员重置用户密码
-				admin.POST("/users/reset-password", usersH.ResetPassword)
+				admin := tfa.Group("/admin")
+				admin.Use(middleware.RequireRole("admin"))
+				{
+					admin.GET("/allprojects", projH.AllList)
+					admin.POST("/projects", projH.Create)
+					admin.PUT("/projects/:id", projH.Update)
+					admin.DELETE("/projects/:id", projH.Delete)
+					admin.POST("/reports/project-totals", repH.ProjectTotals)
+					// CSV 导出
+					admin.GET("/reports/project-totals.csv", repH.ProjectTotalsCSV)
+					admin.GET("/reports/project-export-xlsx", repH.ProjectExportXLSX)
+					admin.POST("/users", usersH.Create)
+					admin.GET("/users", usersH.List)
+					admin.PUT("/users/:id/nickname", usersH.UpdateNickname)
+					admin.POST("/users/:id/require-2fa", usersH.Require2FA)
+					// admin.DELETE("/users/:id", usersH.Delete)
+					// 管理员重置用户密码
+					admin.POST("/users/reset-password", usersH.ResetPassword)
 
-				// Backfill routes
-				admin.POST("/timesheets/backfill", handlers.BackfillTimesheets(dbConn))
-				admin.GET("/timesheets/backfill/history", handlers.GetBackfillHistory(dbConn))
-				admin.DELETE("/timesheets/backfill/:id", handlers.DeleteBackfill(dbConn))
+					// Backfill routes
+					admin.POST("/timesheets/backfill", handlers.BackfillTimesheets(dbConn))
+					admin.GET("/timesheets/backfill/history", handlers.GetBackfillHistory(dbConn))
+					admin.DELETE("/timesheets/backfill/:id", handlers.DeleteBackfill(dbConn))
+				}
+				tfa.GET("/projects", projH.List)
+				tfa.GET("/timesheets/mine", tsH.ListMine)
+				tfa.POST("/timesheets", tsH.Create)
+				tfa.DELETE("/timesheets/:id", tsH.Delete)
+				// 新增：更新本人工时
+				tfa.PUT("/timesheets/:id", tsH.Update)
+
+				// 用户自助改密
+				tfa.POST("/change-password", acctH.ChangePassword)
 			}
-			auth.GET("/projects", projH.List)
-			auth.GET("/timesheets/mine", tsH.ListMine)
-			auth.POST("/timesheets", tsH.Create)
-			auth.DELETE("/timesheets/:id", tsH.Delete)
-			// 新增：更新本人工时
-			auth.PUT("/timesheets/:id", tsH.Update)
-
-			// 用户自助改密
-			auth.POST("/change-password", acctH.ChangePassword)
 		}
 	}
 
@@ -84,7 +94,7 @@ func main() {
 	r.NoRoute(func(c *gin.Context) {
 		if strings.HasPrefix(c.Request.URL.Path, "/api/") {
 			c.JSON(404, gin.H{"error": "not found"})
-			return
+				return
 		}
 		// 非 API 请求直接交给 Nginx，不返回前端页面
 		c.JSON(404, gin.H{"error": "not found"})
@@ -95,3 +105,4 @@ func main() {
 		panic(err)
 	}
 }
+

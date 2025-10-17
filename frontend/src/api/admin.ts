@@ -18,3 +18,5 @@ export const deleteBackfill = (id: number) => http.delete(`/admin/timesheets/bac
 export const getAllProjects = () => http.get('/admin/allprojects')
 
 export const getAllUsers = () => http.get('/admin/users')
+
+export const require2FA = (userId: number, require: boolean) => http.post(`/admin/users/${userId}/require-2fa`, { require })

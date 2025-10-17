@@ -20,10 +20,12 @@ type createUserReq struct {
 }
 
 type userResp struct {
-	ID       uint   `json:"id"`
-	Username string `json:"username"`
-	Role     string `json:"role"`
-	Nickname string `json:"nickname"`
+	ID                       uint   `json:"id"`
+	Username                 string `json:"username"`
+	Role                     string `json:"role"`
+	Nickname                 string `json:"nickname"`
+	TwoFactorEnabled         bool   `json:"two_factor_enabled"`
+	TwoFactorRequiredByAdmin bool   `json:"two_factor_required_by_admin"`
 }
 
 // POST /api/admin/users  -> 创建普通用户（禁止创建 admin），用户名判重
@@ -62,7 +64,14 @@ func (h *UsersHandler) List(c *gin.Context) {
 	}
 	resp := make([]userResp, 0, len(users))
 	for _, u := range users {
-		resp = append(resp, userResp{ID: u.ID, Username: u.Username, Role: string(u.Role), Nickname: u.Nickname})
+		resp = append(resp, userResp{
+			ID:                       u.ID,
+			Username:                 u.Username,
+			Role:                     string(u.Role),
+			Nickname:                 u.Nickname,
+			TwoFactorEnabled:         u.TwoFactorEnabled,
+			TwoFactorRequiredByAdmin: u.TwoFactorRequiredByAdmin,
+		})
 	}
 	c.JSON(http.StatusOK, resp)
 }
@@ -151,4 +160,23 @@ func (h *UsersHandler) UpdateNickname(c *gin.Context) {
         c.JSON(500, gin.H{"error":"update failed"}); return
     }
     c.JSON(200, gin.H{"ok": true})
+}
+
+// POST /api/admin/users/:id/require-2fa
+func (h *UsersHandler) Require2FA(c *gin.Context) {
+	id := c.Param("id")
+	var req struct {
+		Require bool `json:"require"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		return
+	}
+
+	if err := h.DB.Model(&models.User{}).Where("id = ?", id).Update("two_factor_required_by_admin", req.Require).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update 2FA requirement"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"ok": true})
 }

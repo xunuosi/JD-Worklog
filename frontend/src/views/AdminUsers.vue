@@ -19,6 +19,20 @@
           </template>
         </el-table-column>
         <el-table-column prop="role" label="角色" width="120" />
+        <el-table-column label="2FA 启用">
+          <template #default="{ row }">
+            <el-tag :type="row.two_factor_enabled ? 'success' : 'info'">{{ row.two_factor_enabled ? '是' : '否' }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="强制 2FA">
+          <template #default="{ row }">
+            <el-switch
+              v-model="row.two_factor_required_by_admin"
+              @change="(val) => onRequire2FAChange(row.id, val)"
+              :disabled="row.role === 'admin'"
+            />
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="220">
           <template #default="{ row }">
             <!-- 其他按钮... -->
@@ -36,6 +50,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import http from '../api/http'
+import { require2FA } from '../api/admin'
 import Shell from '../components/Shell.vue'
 import { ElMessage } from 'element-plus'
 
@@ -44,7 +59,7 @@ const resetPwd = async (u: { id: number; username: string }) => {
   ElMessage.success('已重置为 root')
 }
 
-type User = { id: number; username: string; role: string; nickname?: string }
+type User = { id: number; username: string; role: string; nickname?: string; two_factor_enabled: boolean; two_factor_required_by_admin: boolean; }
 const users = ref<User[]>([])
 const username = ref('')
 const password = ref('')
@@ -65,6 +80,16 @@ const saveNickname = async (row: User) => {
   if (!nickname) return ElMessage.warning('请输入昵称')
   await http.put(`/admin/users/${row.id}/nickname`, { nickname })
   ElMessage.success('已更新昵称')
+}
+
+const onRequire2FAChange = async (userId: number, value: boolean) => {
+  try {
+    await require2FA(userId, value)
+    ElMessage.success('设置成功')
+    await load()
+  } catch (err: any) {
+    ElMessage.error(err.response?.data?.error || '设置失败')
+  }
 }
 
 const remove = async (id: number) => { await http.delete(`/admin/users/${id}`); ElMessage.success('已删除'); await load() }

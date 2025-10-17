@@ -14,13 +14,16 @@ const (
 )
 
 type User struct {
-	ID        uint   `gorm:"primaryKey" json:"id"`
-	Username  string `gorm:"uniqueIndex;size:64" json:"username"`
-	Nickname  string `json:"nickname"`
-	Password  string `json:"-"`
-	Role      Role   `gorm:"size:16" json:"role"`
-	CreatedAt time.Time
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+	ID                       uint   `gorm:"primaryKey" json:"id"`
+	Username                 string `gorm:"uniqueIndex;size:64" json:"username"`
+	Nickname                 string `json:"nickname"`
+	Password                 string `json:"-"`
+	Role                     Role   `gorm:"size:16" json:"role"`
+	TwoFactorSecret          string `json:"-"`
+	TwoFactorEnabled         bool   `gorm:"default:false" json:"two_factor_enabled"`
+	TwoFactorRequiredByAdmin bool   `gorm:"default:false" json:"two_factor_required_by_admin"`
+	CreatedAt                time.Time
+	DeletedAt                gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
 type Project struct {
