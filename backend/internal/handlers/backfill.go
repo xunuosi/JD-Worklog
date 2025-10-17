@@ -46,16 +46,19 @@ func BackfillTimesheets(db *gorm.DB) gin.HandlerFunc {
 		}
 
 		var existingTimesheets []models.Timesheet
-		db.Where("user_id = ? AND date BETWEEN ? AND ?", req.UserID, startDate, endDate).Find(&existingTimesheets)
+		db.Where("user_id = ? AND date >= ? AND date <= ?", req.UserID, startDate.Format("2006-01-02"), endDate.Format("2006-01-02")).Find(&existingTimesheets)
 
-		existingDates := make(map[string]bool)
+		existingDates := make(map[time.Time]bool)
 		for _, ts := range existingTimesheets {
-			existingDates[ts.Date.Format("2006-01-02")] = true
+			// Normalize to UTC midnight
+			utcDate := time.Date(ts.Date.Year(), ts.Date.Month(), ts.Date.Day(), 0, 0, 0, 0, time.UTC)
+			existingDates[utcDate] = true
 		}
 
 		var availableDays []time.Time
 		for d := startDate; !d.After(endDate); d = d.AddDate(0, 0, 1) {
-			if !existingDates[d.Format("2006-01-02")] {
+			// d is already UTC midnight from parsing
+			if !existingDates[d] {
 				availableDays = append(availableDays, d)
 			}
 		}
