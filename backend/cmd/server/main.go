@@ -59,6 +59,11 @@ func main() {
 				// admin.DELETE("/users/:id", usersH.Delete)
 				// 管理员重置用户密码
 				admin.POST("/users/reset-password", usersH.ResetPassword)
+
+				// Backfill routes
+				admin.POST("/timesheets/backfill", handlers.BackfillTimesheets(dbConn))
+				admin.GET("/timesheets/backfill/history", handlers.GetBackfillHistory(dbConn))
+				admin.DELETE("/timesheets/backfill/:id", handlers.DeleteBackfill(dbConn))
 			}
 			auth.GET("/projects", projH.List)
 			auth.GET("/timesheets/mine", tsH.ListMine)

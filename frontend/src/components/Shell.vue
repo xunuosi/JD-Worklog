@@ -9,6 +9,8 @@
           <el-menu-item index="/admin/projects">项目管理</el-menu-item>
           <el-menu-item index="/admin/users">用户管理</el-menu-item>
           <el-menu-item index="/admin/report">工时报表</el-menu-item>
+          <el-menu-item index="/admin/timesheet-backfill">工时补入</el-menu-item>
+          <el-menu-item index="/admin/timesheet-backfill-history">补入历史</el-menu-item>
         </template>
       </el-menu>
     </el-aside>

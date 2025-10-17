@@ -33,14 +33,30 @@ type Project struct {
 }
 
 type Timesheet struct {
+	ID           uint      `gorm:"primaryKey" json:"id"`
+	UserID       uint      `gorm:"index" json:"user_id"`
+	ProjectID    uint      `gorm:"index" json:"project_id"`
+	Date         time.Time `gorm:"type:date;index" json:"date"`
+	Hours        float32   `json:"hours"`
+	Content      string    `gorm:"type:text" json:"content"`
+	BackfillLogID *uint     `gorm:"index" json:"backfill_log_id,omitempty"`
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	User         User `gorm:"foreignKey:UserID" json:"user"`
+	Project      Project `gorm:"foreignKey:ProjectID" json:"project"`
+}
+
+type BackfillLog struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
+	AdminID   uint      `gorm:"index" json:"admin_id"`
 	UserID    uint      `gorm:"index" json:"user_id"`
 	ProjectID uint      `gorm:"index" json:"project_id"`
-	Date      time.Time `gorm:"type:date;index" json:"date"`
-	Hours     float32   `json:"hours"`
-	Content   string    `gorm:"type:text" json:"content"`
+	TotalDays float32   `json:"total_days"`
+	StartDate time.Time `gorm:"type:date" json:"start_date"`
+	EndDate   time.Time `gorm:"type:date" json:"end_date"`
 	CreatedAt time.Time
-	UpdatedAt time.Time
-	User      User    `gorm:"foreignKey:UserID" json:"user"`
+	Operator  User `gorm:"foreignKey:AdminID" json:"operator"`
+	User      User `gorm:"foreignKey:UserID" json:"user"`
 	Project   Project `gorm:"foreignKey:ProjectID" json:"project"`
 }
+
