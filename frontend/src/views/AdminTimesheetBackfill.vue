@@ -4,12 +4,12 @@
       <template #header><b>工时补入</b></template>
       <el-form :model="form" label-width="120px" style="max-width: 600px">
         <el-form-item label="项目">
-          <el-select v-model="form.project_id" placeholder="请选择项目">
+          <el-select v-model="form.project_id" filterable clearable placeholder="搜索/选择项目">
             <el-option v-for="p in projects" :key="p.id" :label="p.name" :value="p.id"></el-option>
           </el-select>
         </el-form-item>
         <el-form-item label="人员">
-          <el-select v-model="form.user_id" placeholder="请选择人员">
+          <el-select v-model="form.user_id" filterable clearable placeholder="搜索/选择人员">
             <el-option v-for="u in users" :key="u.id" :label="u.nickname" :value="u.id"></el-option>
           </el-select>
         </el-form-item>
@@ -85,7 +85,7 @@ const onSubmit = async () => {
     try {
       await backfillTimesheets(form)
       ElMessage.success('工时补入成功')
-      resetForm()
+      form.user_id = null
     } catch (error: any) {
       ElMessage.error(error.response?.data?.error || '工时补入失败')
     }

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/example/worklog-system/internal/models"
@@ -109,12 +110,23 @@ func BackfillTimesheets(db *gorm.DB) gin.HandlerFunc {
 
 func GetBackfillHistory(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+		pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+
 		var history []models.BackfillLog
-		if err := db.Preload("Operator").Preload("User").Preload("Project").Order("created_at desc").Find(&history).Error; err != nil {
+		var total int64
+
+		db.Model(&models.BackfillLog{}).Count(&total)
+
+		offset := (page - 1) * pageSize
+		if err := db.Preload("Operator").Preload("User").Preload("Project").Order("created_at desc").Offset(offset).Limit(pageSize).Find(&history).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch backfill history"})
 			return
 		}
-		c.JSON(http.StatusOK, history)
+		c.JSON(http.StatusOK, gin.H{
+			"items": history,
+			"total": total,
+		})
 	}
 }
 

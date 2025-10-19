@@ -11,7 +11,7 @@ export interface BackfillRequest {
 
 export const backfillTimesheets = (data: BackfillRequest) => http.post('/admin/timesheets/backfill', data)
 
-export const getBackfillHistory = () => http.get('/admin/timesheets/backfill/history')
+export const getBackfillHistory = (params: { page: number, page_size: number }) => http.get('/admin/timesheets/backfill/history', { params })
 
 export const deleteBackfill = (id: number) => http.delete(`/admin/timesheets/backfill/${id}`)
 

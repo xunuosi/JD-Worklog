@@ -57,7 +57,7 @@ echo ----------------------------------------
 set GOOS=linux
 set GOARCH=386
 if "%CGO_ENABLED%"=="1" set CC=%CC_386%
-call :build_one linux_386 || exit /b 1
+::call :build_one linux_386 || exit /b 1
 
 :: ===== linux/amd64 =====
 set GOOS=linux

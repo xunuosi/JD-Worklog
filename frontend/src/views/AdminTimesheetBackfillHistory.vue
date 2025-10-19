@@ -22,6 +22,17 @@
         </template>
       </el-table-column>
     </el-table>
+    <el-pagination
+      class="mt-4"
+      background
+      layout="total, prev, pager, next, sizes"
+      :total="total"
+      v-model:current-page="page"
+      v-model:page-size="pageSize"
+      :page-sizes="[5, 10, 20, 50]"
+      @current-change="fetchHistory"
+      @size-change="() => { page = 1; fetchHistory() }"
+    />
   </Shell>
 </template>
 
@@ -32,10 +43,14 @@ import Shell from '../components/Shell.vue'
 import { getBackfillHistory, deleteBackfill } from '../api/admin'
 
 const history = ref<any[]>([])
+const total = ref(0)
+const page = ref(1)
+const pageSize = ref(10)
 
 const fetchHistory = async () => {
-  const res = await getBackfillHistory()
-  history.value = res.data
+  const res = await getBackfillHistory({ page: page.value, page_size: pageSize.value })
+  history.value = res.data.items
+  total.value = res.data.total
 }
 
 onMounted(fetchHistory)
