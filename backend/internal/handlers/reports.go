@@ -118,9 +118,10 @@ func (h *ReportHandler) ProjectExportXLSX(c *gin.Context) {
 	}
 
 	// 生成 sheet 名与文件名
-	rng := fmt.Sprintf("%s_%s", from.Format("2006-01-02"), to.Format("2006-01-02"))
+	rng := fmt.Sprintf("%s-%s", from.Format("0102"), to.Format("0102"))
 	totalSheet := "total_" + rng
 	detailSheet := "detail_" + rng
+	userProjectTotalSheet := "user_total_" + rng
 	fname := fmt.Sprintf("worklog_%s.xlsx", rng)
 
 	f := excelize.NewFile()
@@ -129,6 +130,7 @@ func (h *ReportHandler) ProjectExportXLSX(c *gin.Context) {
 	_ = f.SetSheetName(defaultSheet, totalSheet)
 	// 新建 detail_*
 	_, _ = f.NewSheet(detailSheet)
+	_, _ = f.NewSheet(userProjectTotalSheet)
 
 	// ===== 1) total sheet：项目总工时（不含 nickname）=====
 	_ = f.SetSheetRow(totalSheet, "A1", &[]string{"project_name", "contract_num", "total_hours"})
@@ -209,6 +211,44 @@ func (h *ReportHandler) ProjectExportXLSX(c *gin.Context) {
 	for i, r := range details {
 		cell := fmt.Sprintf("A%d", i+2)
 		_ = f.SetSheetRow(detailSheet, cell, &[]any{r.ProjectName, r.ContractNum, r.Nickname, r.Hours, r.Content})
+	}
+
+	// ===== 3) user-project-total sheet：用户-项目 汇总（含 nickname）=====
+	_ = f.SetSheetRow(userProjectTotalSheet, "A1", &[]string{"project_name", "nickname", "total_hours"})
+	type userProjectTotalRow struct {
+		ProjectName string
+		Nickname    string
+		TotalHours  float64
+	}
+	userProjectTotals := []userProjectTotalRow{}
+	if uidStr != "" && uidStr != "0" {
+		h.DB.Raw(`
+            SELECT p.name AS project_name,
+                   COALESCE(u.nickname, u.username) AS nickname,
+                   SUM(t.hours) AS total_hours
+            FROM timesheets t
+            JOIN projects p ON t.project_id = p.id
+            JOIN users    u ON t.user_id   = u.id
+            WHERE DATE(t.date) BETWEEN ? AND ? AND t.user_id = ?
+            GROUP BY p.name, u.nickname, u.username
+            ORDER BY p.name, nickname
+        `, from, to, uidStr).Scan(&userProjectTotals)
+	} else {
+		h.DB.Raw(`
+            SELECT p.name AS project_name,
+                   COALESCE(u.nickname, u.username) AS nickname,
+                   SUM(t.hours) AS total_hours
+            FROM timesheets t
+            JOIN projects p ON t.project_id = p.id
+            JOIN users    u ON t.user_id   = u.id
+            WHERE DATE(t.date) BETWEEN ? AND ?
+            GROUP BY p.name, u.nickname, u.username
+            ORDER BY p.name, nickname
+        `, from, to).Scan(&userProjectTotals)
+	}
+	for i, r := range userProjectTotals {
+		cell := fmt.Sprintf("A%d", i+2)
+		_ = f.SetSheetRow(userProjectTotalSheet, cell, &[]any{r.ProjectName, r.Nickname, r.TotalHours})
 	}
 
 	// 响应下载
