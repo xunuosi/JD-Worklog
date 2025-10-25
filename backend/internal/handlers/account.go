@@ -44,3 +44,40 @@ func (h *AccountHandler) ChangePassword(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
+
+// GET /api/me
+func (h *AccountHandler) GetMe(c *gin.Context) {
+	uid := c.GetUint("user_id")
+	var u models.User
+	if err := h.DB.First(&u, uid).Error; err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not found"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"id":                 u.ID,
+		"username":           u.Username,
+		"role":               u.Role,
+		"nickname":           u.Nickname,
+		"two_factor_enabled": u.TwoFactorEnabled,
+	})
+}
+
+// POST /api/2fa/disable
+func (h *AccountHandler) Disable2FA(c *gin.Context) {
+	uid := c.GetUint("user_id")
+	var u models.User
+	if err := h.DB.First(&u, uid).Error; err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not found"})
+		return
+	}
+
+	if err := h.DB.Model(&u).Updates(map[string]interface{}{
+		"two_factor_enabled": false,
+		"two_factor_secret":  "",
+	}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to disable 2FA"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"ok": true})
+}

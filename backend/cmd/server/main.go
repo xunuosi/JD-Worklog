@@ -83,6 +83,12 @@ func main() {
 
 				// 用户自助改密
 				tfa.POST("/change-password", acctH.ChangePassword)
+
+				// 获取当前用户信息
+				tfa.GET("/me", acctH.GetMe)
+
+				// 用户自助禁用 2FA
+				tfa.POST("/2fa/disable", acctH.Disable2FA)
 			}
 		}
 	}
