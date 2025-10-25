@@ -4,14 +4,13 @@
       <template #header>
         <div class="card-header">登录</div>
       </template>
-      <el-form :model="form" @submit.prevent label-width="80px" label-position="right">
+      <el-form :model="form" @submit.prevent="submit" label-width="80px" label-position="right">
         <el-form-item label="用户名"><el-input v-model="form.username" /></el-form-item>
         <el-form-item label="密码"><el-input v-model="form.password" type="password" /></el-form-item>
         <el-form-item>
-          <el-button type="primary" class="w-full" @click="submit">登录</el-button>
+          <el-button type="primary" class="w-full" native-type="submit">登录</el-button>
         </el-form-item>
       </el-form>
-      <!-- <div class="mt-2 text-muted">示例：admin/admin123 或 alice/alice123</div> -->
     </el-card>
   </div>
 </template>
