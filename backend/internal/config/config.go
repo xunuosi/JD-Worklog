@@ -7,24 +7,26 @@ import (
 )
 
 type Config struct {
-	DBHost      string
-	DBPort      string
-	DBUser      string
-	DBPass      string
-	DBName      string
-	JWTSecret   string
-	CORSOrigins []string
+	DBHost         string
+	DBPort         string
+	DBUser         string
+	DBPass         string
+	DBName         string
+	JWTSecret      string
+	CORSOrigins    []string
+	DeepseekAPIKey string
 }
 
 func Load() *Config {
 	c := &Config{
-		DBHost:      getEnv("DB_HOST", "127.0.0.1"),
-		DBPort:      getEnv("DB_PORT", "3306"),
-		DBUser:      getEnv("DB_USER", "worklog"),
-		DBPass:      getEnv("DB_PASS", "Worklog@123"),
-		DBName:      getEnv("DB_NAME", "worklog"),
-		JWTSecret:   getEnv("JWT_SECRET", "devsecretchangeit"),
-		CORSOrigins: splitCsv(getEnv("CORS_ORIGINS", "http://localhost:5173")),
+		DBHost:         getEnv("DB_HOST", "127.0.0.1"),
+		DBPort:         getEnv("DB_PORT", "3306"),
+		DBUser:         getEnv("DB_USER", "worklog"),
+		DBPass:         getEnv("DB_PASS", "Worklog@123"),
+		DBName:         getEnv("DB_NAME", "worklog"),
+		JWTSecret:      getEnv("JWT_SECRET", "devsecretchangeit"),
+		CORSOrigins:    splitCsv(getEnv("CORS_ORIGINS", "http://localhost:5173")),
+		DeepseekAPIKey: getEnv("DEEPSEEK_API_KEY", ""),
 	}
 	log.Printf("config loaded: %+v", *c)
 	return c

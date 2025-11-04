@@ -13,6 +13,7 @@
 * **前端框架**: Vue.js (请使用 Vue 3 Composition API 风格)
 * **后端语言**: Go (Golang)
 * **数据库**: MySQL
+* **AI大模型**: DeepSeek
 
 ## 行为准则和指令
 

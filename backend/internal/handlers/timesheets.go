@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -17,6 +18,10 @@ type tsReq struct {
 	Date      string  `json:"date"` // YYYY-MM-DD
 	Hours     float32 `json:"hours"`
 	Content   string  `json:"content"`
+}
+
+type ListMineByDateRequest struct {
+	Date string `json:"date"`
 }
 
 func (h *TimesheetHandler) Create(c *gin.Context) {
@@ -77,6 +82,34 @@ func (h *TimesheetHandler) ListMine(c *gin.Context) {
 		"page":      page,
 		"page_size": size,
 	})
+}
+
+// ListMineByDate POST /api/timesheets/mine/by-date
+func (h *TimesheetHandler) ListMineByDate(c *gin.Context) {
+	userID := c.GetUint("user_id")
+	var req ListMineByDateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "bad json"})
+		return
+	}
+
+	d, err := time.ParseInLocation("2006-01-02", req.Date, time.Local)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid date format"})
+		return
+	}
+	log.Printf("Querying timesheets for user %d on date %s", userID, d.Format("2006-01-02"))
+
+	var timesheets []models.Timesheet
+	if err := h.DB.Preload("Project").
+		Where("user_id = ? AND date = ?", userID, d).
+		Order("id ASC").
+		Find(&timesheets).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch timesheets"})
+		return
+	}
+
+	c.JSON(http.StatusOK, timesheets)
 }
 
 func (h *TimesheetHandler) Delete(c *gin.Context) {

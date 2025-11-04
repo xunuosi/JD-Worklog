@@ -35,6 +35,7 @@ func main() {
 	repH := &handlers.ReportHandler{DB: dbConn}
 	acctH := &handlers.AccountHandler{DB: dbConn}
 	usersH := &handlers.UsersHandler{DB: dbConn}
+	aiH := &handlers.AIHandler{DB: dbConn, Cfg: cfg}
 
 	api := r.Group("/api")
 	{
@@ -80,6 +81,8 @@ func main() {
 				tfa.DELETE("/timesheets/:id", tsH.Delete)
 				// 新增：更新本人工时
 				tfa.PUT("/timesheets/:id", tsH.Update)
+				// 新增：按日期获取本人工时
+				tfa.POST("/timesheets/mine/by-date", tsH.ListMineByDate)
 
 				// 用户自助改密
 				tfa.POST("/change-password", acctH.ChangePassword)
@@ -89,6 +92,9 @@ func main() {
 
 				// 用户自助禁用 2FA
 				tfa.POST("/2fa/disable", acctH.Disable2FA)
+
+				// AI report generation
+				tfa.POST("/ai/generate-report", aiH.GenerateReport)
 			}
 		}
 	}
@@ -100,7 +106,7 @@ func main() {
 	r.NoRoute(func(c *gin.Context) {
 		if strings.HasPrefix(c.Request.URL.Path, "/api/") {
 			c.JSON(404, gin.H{"error": "not found"})
-				return
+			return
 		}
 		// 非 API 请求直接交给 Nginx，不返回前端页面
 		c.JSON(404, gin.H{"error": "not found"})
@@ -111,4 +117,3 @@ func main() {
 		panic(err)
 	}
 }
-
