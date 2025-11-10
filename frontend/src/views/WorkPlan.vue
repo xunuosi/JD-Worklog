@@ -2,40 +2,37 @@
   <Shell>
     <el-card>
       <template #header>
-        <div class="flex justify-between">
+        <div class="flex justify-between items-center">
           <b>工作计划</b>
-          <div>
-            <el-date-picker
-              v-if="authStore.user?.role === 'admin'"
-              v-model="fetchDateRange"
-              type="daterange"
-              range-separator="至"
-              start-placeholder="开始日期"
-              end-placeholder="结束日期"
-              @change="fetchWorkPlans"
-              class="mr-4"
-            />
-            <el-select
-              v-if="authStore.user?.role === 'admin'"
-              v-model="selectedProject"
-              placeholder="选择项目"
-              @change="fetchWorkPlans"
-              clearable
-              filterable
-            >
-              <el-option
-                v-for="project in projects"
-                :key="project.id"
-                :label="project.name"
-                :value="project.id"
-              />
-            </el-select>
-            <el-button type="primary" @click="openCreateDialog" class="ml-4">
-              新增计划
-            </el-button>
-          </div>
+          <el-button type="primary" @click="openCreateDialog"> 新增计划 </el-button>
         </div>
       </template>
+      <div v-if="authStore.role === 'admin'" class="mb-4">
+        <el-date-picker
+          v-model="fetchDateRange"
+          type="daterange"
+          range-separator="至"
+          start-placeholder="开始日期"
+          end-placeholder="结束日期"
+          @change="fetchWorkPlans"
+          style="margin-right: 20px"
+        />
+        <el-select
+          v-model="selectedProject"
+          placeholder="选择项目"
+          @change="fetchWorkPlans"
+          clearable
+          filterable
+          style="width: 240px"
+        >
+          <el-option
+            v-for="project in projects"
+            :key="project.id"
+            :label="project.name"
+            :value="project.id"
+          />
+        </el-select>
+      </div>
       <FullCalendar :options="calendarOptions" />
     </el-card>
 
@@ -110,6 +107,8 @@ import FullCalendar from '@fullcalendar/vue3';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import listPlugin from '@fullcalendar/list';
+import type { EventClickArg } from '@fullcalendar/core';
+import zhCnLocale from '@fullcalendar/core/locales/zh-cn';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { useAuthStore } from '../store/auth';
 import { getAllProjects } from '../api/admin';
@@ -137,10 +136,16 @@ const fetchDateRange = ref<[Date, Date] | null>(null);
 const calendarOptions = computed(() => ({
   plugins: [dayGridPlugin, interactionPlugin, listPlugin],
   initialView: 'dayGridMonth',
+  locale: zhCnLocale,
   headerToolbar: {
     left: 'prev,next today',
     center: 'title',
     right: 'dayGridMonth,listWeek',
+  },
+  buttonText: {
+    today: '今日',
+    dayGridMonth: '月视图',
+    listWeek: '周视图',
   },
   events: workPlans.value.map((plan) => ({
     id: plan.id.toString(),
@@ -151,7 +156,7 @@ const calendarOptions = computed(() => ({
       content: plan.content,
     },
   })),
-  eventClick: (info) => {
+  eventClick: (info: EventClickArg) => {
     const plan = workPlans.value.find((p) => p.id.toString() === info.event.id);
     if (plan) {
       form.value = { ...plan };
@@ -163,10 +168,10 @@ const calendarOptions = computed(() => ({
 
 async function fetchProjects() {
   try {
-    if (authStore.user?.role === 'admin') {
-      projects.value = await getAllProjects();
+    if (authStore.role === 'admin') {
+      projects.value = (await getAllProjects()).data;
     } else {
-      projects.value = await getProjects();
+      projects.value = (await getProjects()).data;
     }
   } catch (error) {
     ElMessage.error('获取项目列表失败');
@@ -182,9 +187,9 @@ async function fetchWorkPlans() {
     }
 
     if (selectedProject.value) {
-      workPlans.value = await getWorkPlansByProject(selectedProject.value, start, end);
+      workPlans.value = (await getWorkPlansByProject(selectedProject.value, start, end)).data;
     } else {
-      workPlans.value = await getWorkPlans(start, end);
+      workPlans.value = (await getWorkPlans(start, end)).data;
     }
   } catch (error) {
     ElMessage.error('获取工作计划失败');
@@ -249,7 +254,7 @@ async function handleDelete() {
   })
     .then(async () => {
       try {
-        await deleteWorkPlan(form.value.id!);
+        await deleteWorkPlan(form.value.id!);;
         ElMessage.success('删除成功');
         showEditDialog.value = false;
         fetchWorkPlans();
@@ -278,10 +283,16 @@ onMounted(() => {
 .justify-between {
   justify-content: space-between;
 }
+.items-center {
+  align-items: center;
+}
 .ml-4 {
   margin-left: 1rem;
 }
 .mr-4 {
   margin-right: 1rem;
+}
+.mb-4 {
+  margin-bottom: 1rem;
 }
 </style>

@@ -1,4 +1,5 @@
 import http from './http'
+import type { Project } from '../types'
 
 export interface BackfillRequest {
   project_id: number
@@ -15,7 +16,7 @@ export const getBackfillHistory = (params: { page: number, page_size: number }) 
 
 export const deleteBackfill = (id: number) => http.delete(`/admin/timesheets/backfill/${id}`)
 
-export const getAllProjects = () => http.get('/admin/allprojects')
+export const getAllProjects = () => http.get<Project[]>('/admin/allprojects')
 
 export const getAllUsers = () => http.get('/admin/users')
 
