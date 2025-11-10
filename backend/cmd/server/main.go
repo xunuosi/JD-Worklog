@@ -95,6 +95,13 @@ func main() {
 
 				// AI report generation
 				tfa.POST("/ai/generate-report", aiH.GenerateReport)
+
+				// Work Plan routes
+				tfa.POST("/work-plans/list", handlers.GetWorkPlans(dbConn))
+				tfa.POST("/work-plans/by-project", handlers.GetWorkPlansByProject(dbConn))
+				tfa.POST("/work-plans/create", handlers.CreateWorkPlan(dbConn))
+				tfa.POST("/work-plans/update", handlers.UpdateWorkPlan(dbConn))
+				tfa.POST("/work-plans/delete", handlers.DeleteWorkPlan(dbConn))
 			}
 		}
 	}

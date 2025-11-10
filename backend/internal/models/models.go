@@ -63,3 +63,16 @@ type BackfillLog struct {
 	Project   Project `gorm:"foreignKey:ProjectID" json:"project"`
 }
 
+type WorkPlan struct {
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	UserID    uint      `gorm:"index" json:"user_id"`
+	ProjectID uint      `gorm:"index" json:"project_id"`
+	StartDate time.Time `gorm:"type:date" json:"start_date"`
+	EndDate   time.Time `gorm:"type:date" json:"end_date"`
+	Content   string    `gorm:"type:text" json:"content"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	User      User    `gorm:"foreignKey:UserID" json:"user"`
+	Project   Project `gorm:"foreignKey:ProjectID" json:"project"`
+}
+

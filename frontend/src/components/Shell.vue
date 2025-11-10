@@ -5,6 +5,7 @@
       <el-menu router :default-active="$route.path" class="border-0">
         <el-menu-item index="/timesheet">录入工时</el-menu-item>
         <el-menu-item index="/ai/report">AI生成日报</el-menu-item>
+        <el-menu-item index="/work-plan">工作计划</el-menu-item>
         <el-menu-item index="/account/security">账号安全</el-menu-item>
         <template v-if="role === 'admin'">
           <el-menu-item index="/admin/projects">项目管理</el-menu-item>

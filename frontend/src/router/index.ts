@@ -11,6 +11,7 @@ import AdminTimesheetBackfillHistory from '../views/AdminTimesheetBackfillHistor
 import Force2FASetup from '../views/Force2FASetup.vue'
 import Login2FA from '../views/Login2FA.vue'
 import AIReport from '../views/AIReport.vue'
+import WorkPlan from '../views/WorkPlan.vue'
 
 const router = createRouter({
   history: createWebHistory('/worklog/'),
@@ -25,8 +26,13 @@ const router = createRouter({
     { path: '/admin/users', component: AdminUsers, meta: { requiresAuth: true } },
     { path: '/account/security', component: AccountSecurity, meta: { requiresAuth: true } },
     { path: '/admin/timesheet-backfill', component: AdminTimesheetBackfill, meta: { requiresAuth: true } },
-    { path: '/admin/timesheet-backfill-history', component: AdminTimesheetBackfillHistory, meta: { requiresAuth: true } },
+    {
+      path: '/admin/timesheet-backfill-history',
+      component: AdminTimesheetBackfillHistory,
+      meta: { requiresAuth: true }
+    },
     { path: '/ai/report', component: AIReport, meta: { requiresAuth: true } },
+    { path: '/work-plan', component: WorkPlan, meta: { requiresAuth: true } },
   ]
 })
 
