@@ -91,7 +91,7 @@ func GetWorkPlans(db *gorm.DB) gin.HandlerFunc {
 		}
 
 		var workPlans []models.WorkPlan
-		query := db.Preload("User").Preload("Project")
+		query := db.Model(&models.WorkPlan{})
 
 		if role == models.RoleUser {
 			query = query.Where("user_id = ?", userID)
@@ -126,9 +126,9 @@ func GetWorkPlans(db *gorm.DB) gin.HandlerFunc {
 			return
 		}
 
-		query = query.Where("start_date <= ? AND end_date >= ?", parsedEndDate, parsedStartDate)
+		query = query.Where("start_date <= DATE(?) AND end_date >= DATE(?)", parsedEndDate, parsedStartDate)
 
-		if err := query.Find(&workPlans).Error; err != nil {
+		if err := query.Preload("User").Preload("Project").Find(&workPlans).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get work plans"})
 			return
 		}
@@ -158,7 +158,7 @@ func GetWorkPlansByProject(db *gorm.DB) gin.HandlerFunc {
 		}
 
 		var workPlans []models.WorkPlan
-		query := db.Preload("User").Preload("Project")
+		query := db.Model(&models.WorkPlan{})
 
 		query = query.Where("project_id = ?", req.ProjectID)
 
@@ -195,9 +195,9 @@ func GetWorkPlansByProject(db *gorm.DB) gin.HandlerFunc {
 			return
 		}
 
-		query = query.Where("start_date <= ? AND end_date >= ?", parsedEndDate, parsedStartDate)
+		query = query.Where("start_date <= DATE(?) AND end_date >= DATE(?)", parsedEndDate, parsedStartDate)
 
-		if err := query.Find(&workPlans).Error; err != nil {
+		if err := query.Preload("User").Preload("Project").Find(&workPlans).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get work plans by project"})
 			return
 		}

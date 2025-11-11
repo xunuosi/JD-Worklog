@@ -113,7 +113,7 @@ import FullCalendar from '@fullcalendar/vue3';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import listPlugin from '@fullcalendar/list';
-import type { EventClickArg } from '@fullcalendar/core';
+import type { EventClickArg, DatesSetArg } from '@fullcalendar/core';
 import zhCnLocale from '@fullcalendar/core/locales/zh-cn';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { useAuthStore } from '../store/auth';
@@ -195,6 +195,11 @@ const calendarOptions = computed(() => ({
     today: '今日',
     dayGridMonth: '月视图',
     listWeek: '周视图',
+  },
+  datesSet: (dateInfo: DatesSetArg) => {
+    const end = new Date(dateInfo.end.valueOf() - 24 * 60 * 60 * 1000);
+    fetchDateRange.value = [dateInfo.start, end];
+    fetchWorkPlans();
   },
   events: workPlans.value.map((plan) => {
     const isUser = authStore.role !== 'admin';
