@@ -34,12 +34,18 @@
         </el-select>
       </div>
       <FullCalendar :options="calendarOptions" />
+      <div class="legend-container">
+        <div v-for="item in legendItems" :key="item.name" class="legend-item">
+          <div :style="{ backgroundColor: item.color }" class="legend-color-box"></div>
+          <span>{{ item.name }}</span>
+        </div>
+      </div>
     </el-card>
 
-    <el-dialog v-if="showCreateDialog" v-model="showCreateDialog" title="新增计划" @close="resetForm">
-      <el-form :model="form" label-width="100px">
+    <el-dialog v-if="showCreateDialog" v-model="showCreateDialog" title="新增计划">
+      <el-form :model="createForm" label-width="100px">
         <el-form-item label="项目">
-          <el-select v-model="form.project_id" placeholder="选择项目" clearable filterable>
+          <el-select v-model="createForm.project_id" placeholder="选择项目" clearable filterable>
             <el-option
               v-for="project in projects"
               :key="project.id"
@@ -50,15 +56,16 @@
         </el-form-item>
         <el-form-item label="起止日期">
           <el-date-picker
-            v-model="dateRange"
+            v-model="createDateRange"
             type="daterange"
             range-separator="至"
             start-placeholder="开始日期"
             end-placeholder="结束日期"
+            :disabled-date="disabledDate"
           />
         </el-form-item>
         <el-form-item label="计划内容">
-          <el-input v-model="form.content" type="textarea" />
+          <el-input v-model="createForm.content" type="textarea" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -100,7 +107,6 @@
     </el-dialog>
   </Shell>
 </template>
-
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import FullCalendar from '@fullcalendar/vue3';
@@ -127,11 +133,54 @@ const authStore = useAuthStore();
 const projects = ref<Project[]>([]);
 const selectedProject = ref<number | undefined>();
 const workPlans = ref<WorkPlan[]>([]);
-const showCreateDialog = ref(false);
+
+// State for Edit Dialog
 const showEditDialog = ref(false);
 const form = ref<Partial<WorkPlan>>({});
 const dateRange = ref<[Date, Date] | null>(null);
+
+// State for Create Dialog
+const showCreateDialog = ref(false);
+const createForm = ref<Partial<WorkPlan>>({});
+const createDateRange = ref<[Date, Date] | null>(null);
+
 const fetchDateRange = ref<[Date, Date] | null>(null);
+
+function formatDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+const colorPalette = [
+  '#1abc9c', '#2ecc71', '#3498db', '#9b59b6', '#f1c40f',
+  '#e67e22', '#e74c3c', '#16a085', '#27ae60', '#2980b9',
+  '#8e44ad', '#f39c12', '#d35400', '#c0392b'
+];
+
+function getColorForEntity(id: number): string {
+  if (id === null || id === undefined) {
+    return '#7f8c8d'; // A neutral default color
+  }
+  return colorPalette[id % colorPalette.length];
+}
+
+const legendItems = computed(() => {
+  if (!workPlans.value) return [];
+  const isUser = authStore.role !== 'admin';
+  const items = new Map<string, string>();
+
+  workPlans.value.forEach((plan) => {
+    const name = isUser ? plan.project.name : plan.user.nickname;
+    if (!items.has(name)) {
+      const id = isUser ? plan.project.id : plan.user.id;
+      items.set(name, getColorForEntity(id));
+    }
+  });
+
+  return Array.from(items, ([name, color]) => ({ name, color }));
+});
 
 const calendarOptions = computed(() => ({
   plugins: [dayGridPlugin, interactionPlugin, listPlugin],
@@ -147,15 +196,24 @@ const calendarOptions = computed(() => ({
     dayGridMonth: '月视图',
     listWeek: '周视图',
   },
-  events: workPlans.value.map((plan) => ({
-    id: plan.id.toString(),
-    title: `${plan.user.nickname} - ${plan.project.name}`,
-    start: plan.start_date,
-    end: plan.end_date,
-    extendedProps: {
-      content: plan.content,
-    },
-  })),
+  events: workPlans.value.map((plan) => {
+    const isUser = authStore.role !== 'admin';
+    const title = `${plan.project.name} - ${plan.content}`;
+    const id = isUser ? plan.project.id : plan.user.id;
+    const color = getColorForEntity(id);
+    return {
+      id: plan.id.toString(),
+      title: title,
+      start: plan.start_date,
+      end: new Date(new Date(plan.end_date).setDate(new Date(plan.end_date).getDate() + 1)),
+      allDay: true, // Explicitly set to all-day
+      backgroundColor: color,
+      borderColor: color,
+      extendedProps: {
+        content: plan.content,
+      },
+    };
+  }),
   eventClick: (info: EventClickArg) => {
     const plan = workPlans.value.find((p) => p.id.toString() === info.event.id);
     if (plan) {
@@ -182,8 +240,8 @@ async function fetchWorkPlans() {
   try {
     let start, end;
     if (fetchDateRange.value) {
-      start = fetchDateRange.value[0].toISOString().split('T')[0];
-      end = fetchDateRange.value[1].toISOString().split('T')[0];
+      start = formatDate(fetchDateRange.value[0]);
+      end = formatDate(fetchDateRange.value[1]);
     }
 
     if (selectedProject.value) {
@@ -201,7 +259,15 @@ function resetForm() {
   dateRange.value = null;
 }
 
+const disabledDate = (time: Date) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Set to the beginning of today
+  return time.getTime() < today.getTime(); // Disable dates before the beginning of today
+};
+
 async function openCreateDialog() {
+  createForm.value = {};
+  createDateRange.value = null;
   if (projects.value.length === 0) {
     await fetchProjects();
   }
@@ -209,15 +275,18 @@ async function openCreateDialog() {
 }
 
 async function handleCreate() {
-  if (!form.value.project_id || !dateRange.value) {
+  if (!createForm.value.project_id || !createDateRange.value) {
     ElMessage.error('请填写完整信息');
     return;
   }
-  form.value.start_date = dateRange.value[0].toISOString().split('T')[0];
-  form.value.end_date = dateRange.value[1].toISOString().split('T')[0];
+  const payload = {
+    ...createForm.value,
+    start_date: formatDate(createDateRange.value[0]),
+    end_date: formatDate(createDateRange.value[1]),
+  };
 
   try {
-    await createWorkPlan(form.value);
+    await createWorkPlan(payload);
     ElMessage.success('创建成功');
     showCreateDialog.value = false;
     fetchWorkPlans();
@@ -231,11 +300,16 @@ async function handleUpdate() {
     ElMessage.error('请填写完整信息');
     return;
   }
-  form.value.start_date = dateRange.value[0].toISOString().split('T')[0];
-  form.value.end_date = dateRange.value[1].toISOString().split('T')[0];
+  const payload = {
+    id: form.value.id,
+    project_id: form.value.project_id,
+    content: form.value.content,
+    start_date: formatDate(dateRange.value[0]),
+    end_date: formatDate(dateRange.value[1]),
+  };
 
   try {
-    await updateWorkPlan(form.value);
+    await updateWorkPlan(payload);
     ElMessage.success('更新成功');
     showEditDialog.value = false;
     fetchWorkPlans();
@@ -254,7 +328,7 @@ async function handleDelete() {
   })
     .then(async () => {
       try {
-        await deleteWorkPlan(form.value.id!);;
+        await deleteWorkPlan(form.value.id!);
         ElMessage.success('删除成功');
         showEditDialog.value = false;
         fetchWorkPlans();
@@ -275,7 +349,6 @@ onMounted(() => {
   fetchWorkPlans();
 });
 </script>
-
 <style scoped>
 .flex {
   display: flex;
@@ -294,5 +367,36 @@ onMounted(() => {
 }
 .mb-4 {
   margin-bottom: 1rem;
+}
+.gap-4 {
+  gap: 1rem;
+}
+.w-3\.5 {
+  width: 0.875rem;
+}
+.h-3\.5 {
+  height: 0.875rem;
+}
+.mr-1 {
+  margin-right: 0.25rem;
+}
+.rounded-sm {
+  border-radius: 0.125rem;
+}
+.legend-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+}
+.legend-color-box {
+  width: 0.875rem;
+  height: 0.875rem;
+  margin-right: 0.25rem;
+  border-radius: 0.125rem;
 }
 </style>

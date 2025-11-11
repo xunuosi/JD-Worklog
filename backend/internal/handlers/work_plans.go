@@ -9,15 +9,46 @@ import (
 	"gorm.io/gorm"
 )
 
+type CreateWorkPlanRequest struct {
+	ProjectID uint   `json:"project_id" binding:"required"`
+	StartDate string `json:"start_date" binding:"required"`
+	EndDate   string `json:"end_date" binding:"required"`
+	Content   string `json:"content"`
+}
+
 func CreateWorkPlan(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var workPlan models.WorkPlan
+		var req CreateWorkPlanRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		layout := "2006-01-02"
+		startDate, err := time.Parse(layout, req.StartDate)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid start date format"})
+			return
+		}
+		endDate, err := time.Parse(layout, req.EndDate)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid end date format"})
+			return
+		}
+
 		userID, exists := c.Get("user_id")
 		if !exists {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 			return
 		}
-		workPlan.UserID = userID.(uint)
+
+		workPlan := models.WorkPlan{
+			UserID:    userID.(uint),
+			ProjectID: req.ProjectID,
+			StartDate: startDate,
+			EndDate:   endDate,
+			Content:   req.Content,
+		}
 
 		if err := db.Create(&workPlan).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create work plan"})
@@ -174,17 +205,36 @@ func GetWorkPlansByProject(db *gorm.DB) gin.HandlerFunc {
 	}
 }
 
+type UpdateWorkPlanRequest struct {
+	ID        uint   `json:"id" binding:"required"`
+	ProjectID uint   `json:"project_id" binding:"required"`
+	StartDate string `json:"start_date" binding:"required"`
+	EndDate   string `json:"end_date" binding:"required"`
+	Content   string `json:"content"`
+}
 
 func UpdateWorkPlan(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var updatedWorkPlan models.WorkPlan
-		if err := c.ShouldBindJSON(&updatedWorkPlan); err != nil {
+		var req UpdateWorkPlanRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
+		layout := "2006-01-02"
+		startDate, err := time.Parse(layout, req.StartDate)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid start date format"})
+			return
+		}
+		endDate, err := time.Parse(layout, req.EndDate)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid end date format"})
+			return
+		}
+
 		var workPlan models.WorkPlan
-		if err := db.First(&workPlan, updatedWorkPlan.ID).Error; err != nil {
+		if err := db.First(&workPlan, req.ID).Error; err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Work plan not found"})
 			return
 		}
@@ -207,10 +257,10 @@ func UpdateWorkPlan(db *gorm.DB) gin.HandlerFunc {
 			return
 		}
 
-		workPlan.ProjectID = updatedWorkPlan.ProjectID
-		workPlan.StartDate = updatedWorkPlan.StartDate
-		workPlan.EndDate = updatedWorkPlan.EndDate
-		workPlan.Content = updatedWorkPlan.Content
+		workPlan.ProjectID = req.ProjectID
+		workPlan.StartDate = startDate
+		workPlan.EndDate = endDate
+		workPlan.Content = req.Content
 		workPlan.UpdatedAt = time.Now()
 
 		if err := db.Save(&workPlan).Error; err != nil {
