@@ -76,12 +76,14 @@ func CreateWorkPlan(db *gorm.DB) gin.HandlerFunc {
 type GetWorkPlansRequest struct {
 	StartDate *string `json:"start_date"`
 	EndDate   *string `json:"end_date"`
+	UserID    *uint   `json:"user_id"`
 }
 
 type GetWorkPlansByProjectRequest struct {
 	ProjectID uint    `json:"project_id"`
 	StartDate *string `json:"start_date"`
 	EndDate   *string `json:"end_date"`
+	UserID    *uint   `json:"user_id"`
 }
 
 func GetWorkPlans(db *gorm.DB) gin.HandlerFunc {
@@ -108,7 +110,11 @@ func GetWorkPlans(db *gorm.DB) gin.HandlerFunc {
 		var workPlans []models.WorkPlan
 		query := db.Model(&models.WorkPlan{})
 
-		if role == models.RoleUser {
+		if role == models.RoleAdmin {
+			if req.UserID != nil && *req.UserID > 0 {
+				query = query.Where("user_id = ?", *req.UserID)
+			}
+		} else {
 			query = query.Where("user_id = ?", userID)
 		}
 
@@ -221,7 +227,11 @@ func GetWorkPlansByProject(db *gorm.DB) gin.HandlerFunc {
 
 		query = query.Where("project_id = ?", req.ProjectID)
 
-		if role == models.RoleUser {
+		if role == models.RoleAdmin {
+			if req.UserID != nil && *req.UserID > 0 {
+				query = query.Where("user_id = ?", *req.UserID)
+			}
+		} else {
 			query = query.Where("user_id = ?", userID)
 		}
 

@@ -32,6 +32,21 @@
             :value="project.id"
           />
         </el-select>
+        <el-select
+          v-model="selectedUser"
+          placeholder="选择用户"
+          @change="fetchWorkPlans"
+          clearable
+          filterable
+          style="width: 240px; margin-left: 20px;"
+        >
+          <el-option
+            v-for="user in users"
+            :key="user.id"
+            :label="user.nickname"
+            :value="user.id"
+          />
+        </el-select>
       </div>
       <FullCalendar :options="calendarOptions" />
       <div class="legend-container">
@@ -143,6 +158,7 @@ const authStore = useAuthStore();
 const projects = ref<Project[]>([]);
 const users = ref<User[]>([]);
 const selectedProject = ref<number | undefined>();
+const selectedUser = ref<number | undefined>();
 const workPlans = ref<WorkPlan[]>([]);
 
 // State for Edit Dialog
@@ -270,9 +286,9 @@ async function fetchWorkPlans() {
     }
 
     if (selectedProject.value) {
-      workPlans.value = (await getWorkPlansByProject(selectedProject.value, start, end)).data;
+      workPlans.value = (await getWorkPlansByProject(selectedProject.value, start, end, selectedUser.value)).data;
     } else {
-      workPlans.value = (await getWorkPlans(start, end)).data;
+      workPlans.value = (await getWorkPlans(start, end, selectedUser.value)).data;
     }
   } catch (error) {
     ElMessage.error('获取工作计划失败');
