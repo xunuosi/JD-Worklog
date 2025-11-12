@@ -5,6 +5,10 @@ export function getWorkPlans(start_date?: string, end_date?: string) {
   return http.post<WorkPlan[]>('/work-plans/list', { start_date, end_date });
 }
 
+export function getMyWorkPlans(start_date: string, end_date: string) {
+  return http.post<WorkPlan[]>('/work-plans/mine', { start_date, end_date });
+}
+
 export function getWorkPlansByProject(project_id: number, start_date?: string, end_date?: string) {
   return http.post<WorkPlan[]>('/work-plans/by-project', { project_id, start_date, end_date });
 }

@@ -17,16 +17,16 @@ export interface WorkPlan {
 }
 
 export interface Timesheet {
-  ID: number;
-  CreatedAt: string;
-  UpdatedAt: string;
-  DeletedAt: string | null;
-  UserID: number;
-  ProjectID: number;
-  Project: Project;
-  Date: string;
-  Hours: number;
-  Content: string;
+  id: number;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+  userId: number;
+  projectId: number;
+  project: Project;
+  date: string;
+  hours: number;
+  content: string;
 }
 
 export interface Project {

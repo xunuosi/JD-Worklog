@@ -151,6 +151,50 @@ func GetWorkPlans(db *gorm.DB) gin.HandlerFunc {
 	}
 }
 
+func GetMyWorkPlans(db *gorm.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userID, exists := c.Get("user_id")
+		if !exists {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			return
+		}
+
+		var req GetWorkPlansRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		var workPlans []models.WorkPlan
+		query := db.Model(&models.WorkPlan{}).Where("user_id = ?", userID)
+
+		if req.StartDate == nil || *req.StartDate == "" || req.EndDate == nil || *req.EndDate == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "start_date and end_date are required"})
+			return
+		}
+
+		parsedStartDate, err := time.Parse("2006-01-02", *req.StartDate)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid start date format"})
+			return
+		}
+
+		parsedEndDate, err := time.Parse("2006-01-02", *req.EndDate)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid end date format"})
+			return
+		}
+
+		query = query.Where("start_date <= DATE(?) AND end_date >= DATE(?)", parsedEndDate, parsedStartDate)
+
+		if err := query.Preload("Project").Find(&workPlans).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get my work plans"})
+			return
+		}
+		c.JSON(http.StatusOK, workPlans)
+	}
+}
+
 func GetWorkPlansByProject(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID, exists := c.Get("user_id")
