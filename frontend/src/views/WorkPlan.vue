@@ -44,6 +44,16 @@
 
     <el-dialog v-if="showCreateDialog" v-model="showCreateDialog" title="新增计划">
       <el-form :model="createForm" label-width="100px">
+        <el-form-item v-if="authStore.role === 'admin'" label="用户">
+          <el-select v-model="createForm.user_id" placeholder="选择用户" clearable filterable>
+            <el-option
+              v-for="user in users"
+              :key="user.id"
+              :label="user.nickname"
+              :value="user.id"
+            />
+          </el-select>
+        </el-form-item>
         <el-form-item label="项目">
           <el-select v-model="createForm.project_id" placeholder="选择项目" clearable filterable>
             <el-option
@@ -117,7 +127,7 @@ import type { EventClickArg, DatesSetArg } from '@fullcalendar/core';
 import zhCnLocale from '@fullcalendar/core/locales/zh-cn';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { useAuthStore } from '../store/auth';
-import { getAllProjects } from '../api/admin';
+import { getAllProjects, getAllUsers } from '../api/admin';
 import { getProjects } from '../api/projects';
 import {
   getWorkPlans,
@@ -126,11 +136,12 @@ import {
   updateWorkPlan,
   deleteWorkPlan,
 } from '../api/work_plans';
-import type { WorkPlan, Project } from '../types';
+import type { WorkPlan, Project, User } from '../types';
 import Shell from '../components/Shell.vue';
 
 const authStore = useAuthStore();
 const projects = ref<Project[]>([]);
+const users = ref<User[]>([]);
 const selectedProject = ref<number | undefined>();
 const workPlans = ref<WorkPlan[]>([]);
 
@@ -241,6 +252,15 @@ async function fetchProjects() {
   }
 }
 
+async function fetchUsers() {
+  if (authStore.role !== 'admin') return;
+  try {
+    users.value = (await getAllUsers()).data;
+  } catch (error) {
+    ElMessage.error('获取用户列表失败');
+  }
+}
+
 async function fetchWorkPlans() {
   try {
     let start, end;
@@ -275,6 +295,9 @@ async function openCreateDialog() {
   createDateRange.value = null;
   if (projects.value.length === 0) {
     await fetchProjects();
+  }
+  if (authStore.role === 'admin' && users.value.length === 0) {
+    await fetchUsers();
   }
   showCreateDialog.value = true;
 }
@@ -351,6 +374,7 @@ onMounted(() => {
   fetchDateRange.value = [start, end];
 
   fetchProjects();
+  fetchUsers();
   fetchWorkPlans();
 });
 </script>

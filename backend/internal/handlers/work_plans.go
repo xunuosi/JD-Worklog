@@ -14,6 +14,7 @@ type CreateWorkPlanRequest struct {
 	StartDate string `json:"start_date" binding:"required"`
 	EndDate   string `json:"end_date" binding:"required"`
 	Content   string `json:"content"`
+	UserID    *uint  `json:"user_id"`
 }
 
 func CreateWorkPlan(db *gorm.DB) gin.HandlerFunc {
@@ -42,8 +43,22 @@ func CreateWorkPlan(db *gorm.DB) gin.HandlerFunc {
 			return
 		}
 
+		roleStr, exists := c.Get("role")
+		if !exists {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			return
+		}
+		role := models.Role(roleStr.(string))
+
+		var targetUserID uint
+		if role == models.RoleAdmin && req.UserID != nil {
+			targetUserID = *req.UserID
+		} else {
+			targetUserID = userID.(uint)
+		}
+
 		workPlan := models.WorkPlan{
-			UserID:    userID.(uint),
+			UserID:    targetUserID,
 			ProjectID: req.ProjectID,
 			StartDate: startDate,
 			EndDate:   endDate,
